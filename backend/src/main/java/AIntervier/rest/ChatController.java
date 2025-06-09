@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/chat")
 public class ChatController {
@@ -38,6 +39,17 @@ public class ChatController {
         repository.save(botMessage);
 
         return ResponseEntity.ok(new ChatResponse(botReply));
+    }
+
+    @PostMapping("/save")
+    public ResponseEntity<ChatResponse> saveMessage(@RequestBody ChatRequest request) {
+        ChatMessage message = new ChatMessage();
+        message.setSessionId(request.getSessionId());
+        message.setSender("user");
+        message.setMessage(request.getMessage());
+        repository.save(message);
+
+        return ResponseEntity.ok(new ChatResponse(message.getMessage()));
     }
 
     @PostMapping("/ask-with-context")
@@ -68,9 +80,9 @@ public class ChatController {
         }
     }
 
-    @GetMapping("/{sessionId}")
-    public List<ChatMessage> getHistory(@PathVariable String sessionId) {
-        return repository.findBySessionId(sessionId);
+    @GetMapping("/history")
+    public List<ChatMessage> getHistory() {
+        return repository.findAll();
     }
 }
 

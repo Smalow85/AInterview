@@ -15,7 +15,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { GenAILiveClient } from "../lib/genai-live-client";
+import { EnhancedGenAILiveClient } from "../lib/enhanced-genai-live-client";
 import { LiveClientOptions } from "../types";
 import { AudioStreamer } from "../lib/audio-streamer";
 import { audioContext } from "../lib/utils";
@@ -23,7 +23,7 @@ import VolMeterWorket from "../lib/worklets/vol-meter";
 import { LiveConnectConfig } from "@google/genai";
 
 export type UseLiveAPIResults = {
-  client: GenAILiveClient;
+  client: EnhancedGenAILiveClient;
   setConfig: (config: LiveConnectConfig) => void;
   config: LiveConnectConfig;
   model: string;
@@ -35,7 +35,7 @@ export type UseLiveAPIResults = {
 };
 
 export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
-  const client = useMemo(() => new GenAILiveClient(options), [options]);
+  const client = useMemo(() => new EnhancedGenAILiveClient(options), [options]);
   const audioStreamerRef = useRef<AudioStreamer | null>(null);
 
   const [model, setModel] = useState<string>("models/gemini-2.0-flash-exp");
