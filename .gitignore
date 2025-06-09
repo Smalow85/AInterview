@@ -31,3 +31,5 @@ build/
 
 ### VS Code ###
 .vscode/
+/frontend/live-api-web-console-main/.env
+/frontend/live-api-web-console-main/.gitignore
