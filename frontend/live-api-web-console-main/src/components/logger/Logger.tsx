@@ -18,15 +18,17 @@ import { useEffect } from "react";
 import { useLoggerStore } from "../../lib/store-logger";
 import "./logger.scss";
 
+
 export default function Logger() {
-  const { messages } = useLoggerStore();
 
   useEffect(() => {
     useLoggerStore.getState().fetchMessages();
   }, []);
 
+  const { messages, loading } = useLoggerStore();
   return (
     <div className="logger">
+      {loading && <div className="logger-loading">Загрузка...</div>}
       <ul className="logger-list">
         {messages.map((message) => (
           <li key={message.id}>

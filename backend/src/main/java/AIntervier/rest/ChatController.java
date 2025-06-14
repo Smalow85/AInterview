@@ -61,7 +61,7 @@ public class ChatController {
         System.out.println(request);
         ChatMessage message = new ChatMessage();
         message.setSessionId(request.getSessionId());
-        message.setSender("bot");
+        message.setSender(request.getSender());
         message.setMessage(request.getMessage());
         message.setCreated(LocalDateTime.now());
         repository.save(message);

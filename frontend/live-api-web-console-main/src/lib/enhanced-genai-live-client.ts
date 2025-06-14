@@ -1,6 +1,7 @@
 import { GenAILiveClient } from "./genai-live-client";
 import { LiveClientOptions } from "../types";
-import { ChatMessage, Message } from "./store-chat";
+import { ChatMessage } from "./store-chat";
+import { v4 as uuidv4 } from 'uuid'; // Import from uuid library
 
 export class EnhancedGenAILiveClient extends GenAILiveClient {
     private accumulatedText: string = "";
@@ -33,7 +34,7 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         const message: ChatMessage = {
             sender: 'user',
             message: text,
-            id: ""
+            id: uuidv4()
         }
         this.emit('messageAdded', message);
     }
@@ -42,9 +43,9 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         if (this.accumulatedText) {
             await this.saveMessageToDatabase({ sessionId: '123', sender: 'bot', message: this.accumulatedText });
             const message: ChatMessage = {
-                sender: 'user',
+                sender: 'bot',
                 message: this.accumulatedText,
-                id: ""
+                id: uuidv4()
             }
             this.emit('messageAdded', message);
             this.accumulatedText = '';

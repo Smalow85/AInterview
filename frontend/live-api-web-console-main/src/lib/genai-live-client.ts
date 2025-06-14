@@ -33,7 +33,7 @@ import { difference } from "lodash";
 import { LiveClientOptions, StreamingLog } from "../types";
 import { base64ToArrayBuffer } from "./utils";
 import { ChatMessage } from "../types/chat-message";
-import { Message } from "./store-chat";
+
 
 /**
  * Event types that can be emitted by the MultimodalLiveClient.

@@ -21,7 +21,6 @@ import { AudioStreamer } from "../lib/audio-streamer";
 import { audioContext } from "../lib/utils";
 import VolMeterWorket from "../lib/worklets/vol-meter";
 import { LiveConnectConfig } from "@google/genai";
-import useChatStore from "../lib/store-chat";
 
 export type UseLiveAPIResults = {
   client: EnhancedGenAILiveClient;
