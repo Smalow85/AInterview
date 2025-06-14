@@ -110,6 +110,11 @@
 			<artifactId>Java-WebSocket</artifactId>
 			<version>1.5.6</version>
 		</dependency>
+		<dependency>
+			<groupId>com.alphacephei</groupId>
+			<artifactId>vosk</artifactId>
+			<version>0.3.45</version>
+		</dependency>
 	</dependencies>
 	<dependencyManagement>
 		<dependencies>

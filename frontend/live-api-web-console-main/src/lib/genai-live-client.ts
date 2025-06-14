@@ -32,6 +32,8 @@ import { EventEmitter } from "eventemitter3";
 import { difference } from "lodash";
 import { LiveClientOptions, StreamingLog } from "../types";
 import { base64ToArrayBuffer } from "./utils";
+import { ChatMessage } from "../types/chat-message";
+import { Message } from "./store-chat";
 
 /**
  * Event types that can be emitted by the MultimodalLiveClient.
@@ -49,7 +51,7 @@ export interface LiveClientEventTypes {
   // Emitted when the server interrupts the current generation
   interrupted: () => void;
   // Emitted for logging events
-  log: (log: StreamingLog) => void;
+  log: (log: ChatMessage) => void;
   // Emitted when the connection opens
   open: () => void;
   // Emitted when the initial setup is complete
@@ -62,6 +64,9 @@ export interface LiveClientEventTypes {
   ) => void;
   // Emitted when the current turn is complete
   turncomplete: () => void;
+  // Emitted when a model response is received
+  modelResponse: (message: string) => void;
+  messageAdded: (message: ChatMessage) => void;
 }
 
 /**
@@ -90,7 +95,12 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
   protected config: LiveConnectConfig | null = null;
 
   public getConfig() {
-    return { ...this.config };
+    return { ...this.config, inputAudioTranscription: {
+          enabled: true
+        },
+        outputAudioTranscription: {
+          enabled: true,
+        } };
   }
 
   constructor(options: LiveClientOptions) {
@@ -109,14 +119,18 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
       type,
       message,
     };
-    this.emit("log", log);
   }
 
   async connect(model: string, config: LiveConnectConfig): Promise<boolean> {
     if (this._status === "connected" || this._status === "connecting") {
       return false;
     }
-
+    config = { ...config, inputAudioTranscription: {
+          enabled: true
+        },
+        outputAudioTranscription: {
+          enabled: true,
+        } }
     this._status = "connecting";
     this.config = config;
     this._model = model;
@@ -125,7 +139,7 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
       onopen: this.onopen,
       onmessage: this.onmessage,
       onerror: this.onerror,
-      onclose: this.onclose,
+      onclose: this.onclose, 
     };
 
     try {
@@ -216,7 +230,6 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
 
         // strip the audio parts out of the modelTurn
         const otherParts = difference(parts, audioParts);
-        // console.log("otherParts", otherParts);
 
         base64s.forEach((b64) => {
           if (b64) {
@@ -295,3 +308,6 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
     });
   }
 }
+
+
+

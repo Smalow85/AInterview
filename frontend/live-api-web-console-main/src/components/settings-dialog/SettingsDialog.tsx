@@ -9,7 +9,7 @@ import "./settings-dialog.scss";
 import { useLiveAPIContext } from "../../contexts/LiveAPIContext";
 import VoiceSelector from "./VoiceSelector";
 import ResponseModalitySelector from "./ResponseModalitySelector";
-import { FunctionDeclaration, LiveConnectConfig, Tool } from "@google/genai";
+import { FunctionDeclaration, LiveConnectConfig, Modality, Tool } from "@google/genai";
 
 type FunctionDeclarationsTool = Tool & {
   functionDeclarations: FunctionDeclaration[];
@@ -60,6 +60,12 @@ export default function SettingsDialog() {
       const newConfig: LiveConnectConfig = {
         ...config,
         systemInstruction: event.target.value,
+        inputAudioTranscription: {
+          enabled: true
+        },
+        outputAudioTranscription: {
+          enabled: true,
+        }
       };
       setConfig(newConfig);
     },

@@ -15,51 +15,54 @@
  */
 
 import { create } from "zustand";
-import { StreamingLog } from "../types";
-import { mockLogs } from "../components/logger/mock-logs";
+import { ChatMessage } from "./store-chat";
 
-interface StoreLoggerState {
+interface StoreChatState {
   maxLogs: number;
-  logs: StreamingLog[];
-  log: (streamingLog: StreamingLog) => void;
-  clearLogs: () => void;
+  messages: ChatMessage[];
+  addMessage: (chatMessage: ChatMessage) => void;
+  clearMessages: () => void;
+  fetchMessages: () => Promise<void>;
+  loading: boolean;
 }
 
-export const useLoggerStore = create<StoreLoggerState>((set, get) => ({
+export const useLoggerStore = create<StoreChatState>((set) => ({
   maxLogs: 100,
-  logs: [], //mockLogs,
-  log: ({ date, type, message }: StreamingLog) => {
+  messages: [],
+  loading: true,
+  addMessage: (chatMessage) => {
     set((state) => {
-      const prevLog = state.logs.at(-1);
-      if (prevLog && prevLog.type === type && prevLog.message === message) {
+      console.log("I am here");
+      const prevLog = state.messages.at(-1);
+      if (prevLog && prevLog.message === chatMessage.message) {
         return {
-          logs: [
-            ...state.logs.slice(0, -1),
-            {
-              date,
-              type,
-              message,
-              count: prevLog.count ? prevLog.count + 1 : 1,
-            } as StreamingLog,
+          messages: [
+            ...state.messages.slice(0, -1),
+            { ...prevLog },
           ],
         };
       }
       return {
-        logs: [
-          ...state.logs.slice(-(get().maxLogs - 1)),
-          {
-            date,
-            type,
-            message,
-          } as StreamingLog,
+        messages: [
+          ...state.messages.slice(-(state.maxLogs - 1)),
+          { ...chatMessage, count: 1 },
         ],
       };
     });
   },
-
-  clearLogs: () => {
-    console.log("clear log");
-    set({ logs: [] });
+  fetchMessages: async () => {
+    try {
+      const response = await fetch("http://localhost:8080/api/chat/history");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data: ChatMessage[] = await response.json();
+      set({ messages: data, loading: false });
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      set({ loading: false });
+    }
   },
+  clearMessages: () => set({ messages: [] }),
   setMaxLogs: (n: number) => set({ maxLogs: n }),
 }));

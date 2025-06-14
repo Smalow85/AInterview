@@ -1,5 +1,6 @@
 package AIntervier.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -23,6 +24,12 @@ public class ChatMessage {
 
     @Column(name = "created")
     private LocalDateTime created;
+
+    @Column(name = "file_id")
+    private String fileName;
+
+    @Column(name = "file_path")
+    private String filePath;
 
     public ChatMessage() {
     }
@@ -72,6 +79,22 @@ public class ChatMessage {
 
     public void setCreated(LocalDateTime created) {
         this.created = created;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public String getFilePath() {
+        return filePath;
+    }
+
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
     }
 
     // Optional: Override toString() for easier logging and debugging

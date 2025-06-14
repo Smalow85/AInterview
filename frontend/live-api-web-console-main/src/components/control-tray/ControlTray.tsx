@@ -100,8 +100,10 @@ function ControlTray({
       ]);
     };
     if (connected && !muted && audioRecorder) {
+      console.log("starting audio recorder");
       audioRecorder.on("data", onData).on("volume", setInVolume).start();
     } else {
+      console.log("Stopping audio recorder");
       audioRecorder.stop();
     }
     return () => {

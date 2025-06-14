@@ -21,6 +21,7 @@ import { AudioStreamer } from "../lib/audio-streamer";
 import { audioContext } from "../lib/utils";
 import VolMeterWorket from "../lib/worklets/vol-meter";
 import { LiveConnectConfig } from "@google/genai";
+import useChatStore from "../lib/store-chat";
 
 export type UseLiveAPIResults = {
   client: EnhancedGenAILiveClient;
@@ -39,26 +40,28 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
   const audioStreamerRef = useRef<AudioStreamer | null>(null);
 
   const [model, setModel] = useState<string>("models/gemini-2.0-flash-exp");
-  const [config, setConfig] = useState<LiveConnectConfig>({});
+  const [config, setConfig] = useState<LiveConnectConfig>(
+    {
+      inputAudioTranscription: { enabled: true },
+      outputAudioTranscription: { enabled: true },
+    }
+  );
   const [connected, setConnected] = useState(false);
   const [volume, setVolume] = useState(0);
 
-  // register audio for streaming server -> speakers
   useEffect(() => {
+    const setupAudio = async () => {
     if (!audioStreamerRef.current) {
-      audioContext({ id: "audio-out" }).then((audioCtx: AudioContext) => {
+        const audioCtx = await audioContext({ id: "audio-out" });
         audioStreamerRef.current = new AudioStreamer(audioCtx);
-        audioStreamerRef.current
-          .addWorklet<any>("vumeter-out", VolMeterWorket, (ev: any) => {
+        await audioStreamerRef.current.addWorklet<any>("vumeter-out", VolMeterWorket, (ev: any) => {
             setVolume(ev.data.volume);
-          })
-          .then(() => {
-            // Successfully added worklet
           });
-      });
     }
-  }, [audioStreamerRef]);
+    }
 
+    setupAudio();
+  }, []);
   useEffect(() => {
     const onOpen = () => {
       setConnected(true);
@@ -93,8 +96,7 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
         .off("audio", onAudio)
         .disconnect();
     };
-  }, [client]);
-
+  }, [client, audioStreamerRef]);
   const connect = useCallback(async () => {
     if (!config) {
       throw new Error("config has not been set");

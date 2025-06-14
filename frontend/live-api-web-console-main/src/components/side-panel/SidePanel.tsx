@@ -19,22 +19,19 @@ import cn from "classnames";
 import { useEffect, useRef, useState } from "react";
 import { RiSidebarFoldLine, RiSidebarUnfoldLine } from "react-icons/ri";
 import { useLiveAPIContext } from "../../contexts/LiveAPIContext";
-import { useLoggerStore } from "../../lib/store-logger";
 import Logger from "../logger/Logger";
 import "./side-panel.scss";
+import useChatStore from "../../lib/store-chat";
+import { useLoggerStore } from "../../lib/store-logger";
 
 export default function SidePanel() {
   const { connected, client } = useLiveAPIContext();
   const [open, setOpen] = useState(true);
   const loggerRef = useRef<HTMLDivElement>(null);
   const loggerLastHeightRef = useRef<number>(-1);
-  const { log, logs } = useLoggerStore();
+  const { messages, addMessage } = useLoggerStore()
 
   const [textInput, setTextInput] = useState("");
-  const [selectedOption, setSelectedOption] = useState<{
-    value: string;
-    label: string;
-  } | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   //scroll the log to the bottom when new logs come in
@@ -47,15 +44,15 @@ export default function SidePanel() {
         loggerLastHeightRef.current = scrollHeight;
       }
     }
-  }, [logs]);
+  }, [messages]);
 
   // listen for log events and store them
   useEffect(() => {
-    client.on("log", log);
+    client.on("messageAdded", addMessage);
     return () => {
-      client.off("log", log);
+      client.off("messageAdded", addMessage);
     };
-  }, [client, log]);
+  }, [client, addMessage]);
 
   const handleSubmit = () => {
     client.send([{ text: textInput }]);

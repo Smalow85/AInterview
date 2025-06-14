@@ -1,9 +1,11 @@
 package AIntervier.model;
 
-public class ChatRequest {
+import java.io.Serializable;
+
+public class ChatRequest implements Serializable {
     private String sessionId;
+    private String sender;
     private String message;
-    private boolean stop;
 
     public ChatRequest() {
     }
@@ -29,12 +31,12 @@ public class ChatRequest {
         this.message = message;
     }
 
-    public boolean isStop() {
-        return stop;
+    public String getSender() {
+        return sender;
     }
 
-    public void setStop(boolean stop) {
-        this.stop = stop;
+    public void setSender(String sender) {
+        this.sender = sender;
     }
 }
 

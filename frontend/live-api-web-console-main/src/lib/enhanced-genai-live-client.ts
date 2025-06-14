@@ -1,29 +1,57 @@
 import { GenAILiveClient } from "./genai-live-client";
 import { LiveClientOptions } from "../types";
-// other imports ...
+import { ChatMessage, Message } from "./store-chat";
 
 export class EnhancedGenAILiveClient extends GenAILiveClient {
+    private accumulatedText: string = "";
+
     constructor(options: LiveClientOptions) {
         super(options);
-        this.onmessage = this.onmessage.bind(this); //Bind this method for correct context
+        this.onmessage = this.onmessage.bind(this);
+        this.handleUserInput = this.handleUserInput.bind(this);
+        this.handleTurnComplete = this.handleTurnComplete.bind(this);
+        this.sendRealtimeInput = this.sendRealtimeInput.bind(this);
     }
-    async onmessage(message: any) {
-        console.log("Received message:", message);
-        await super.onmessage(message);
 
-        //Add your custom logic for saving messages to the database
-        if (message.serverContent && message.serverContent.modelTurn) {
-            const userMessage = message.serverContent.clientTurn?.parts[0]?.text;
-            const botMessage = message.serverContent.modelTurn?.parts[0]?.text;
-            console.log("User message:", userMessage);
-            console.log("Bot message:", botMessage);
-            if (userMessage){
-                await this.saveMessageToDatabase({ sessionId: '123', sender: 'user', message: userMessage });
+    protected async onmessage(message: any) {
+        await super.onmessage(message);
+        if (message.serverContent) {
+            if ("inputTranscription" in message.serverContent) {
+                this.handleUserInput(message.serverContent.inputTranscription.text);
             }
-            if (botMessage){
-                await this.saveMessageToDatabase({ sessionId: '123', sender: 'bot', message: botMessage });
+            if ("outputTranscription" in message.serverContent) {
+                this.accumulatedText += message.serverContent.outputTranscription.text;
+            }
+            if ("turnComplete" in message.serverContent && message.serverContent.turnComplete) {
+                this.handleTurnComplete();
             }
         }
+    }
+
+    private async handleUserInput(text: string) {
+        await this.saveMessageToDatabase({ sessionId: '123', sender: 'user', message: text });
+        const message: ChatMessage = {
+            sender: 'user',
+            message: text,
+            id: ""
+        }
+        this.emit('messageAdded', message);
+    }
+
+    private async handleTurnComplete() {
+        if (this.accumulatedText) {
+            await this.saveMessageToDatabase({ sessionId: '123', sender: 'bot', message: this.accumulatedText });
+            const message: ChatMessage = {
+                sender: 'user',
+                message: this.accumulatedText,
+                id: ""
+            }
+            this.emit('messageAdded', message);
+            this.accumulatedText = '';
+                } else {
+            console.warn("No text to save for this turn.");
+                }
+        this.emit("turncomplete");
     }
 
     async saveMessageToDatabase(messageData: { sessionId: string; sender: string; message: string }) {
@@ -35,11 +63,15 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
                 },
                 body: JSON.stringify(messageData)
             });
+
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.message || `HTTP error! status: ${response.status}`;
+                throw new Error(errorMessage);
             }
         } catch (error) {
             console.error('Error saving message to database:', error);
         }
     }
+
 }

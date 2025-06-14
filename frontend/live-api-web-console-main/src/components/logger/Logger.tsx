@@ -14,22 +14,24 @@
  * limitations under the License.
  */
 
+import { useEffect } from "react";
+import { useLoggerStore } from "../../lib/store-logger";
 import "./logger.scss";
-import { useChatStore } from "../../lib/store-chat";
 
 export default function Logger() {
-  const { messages, loading } = useChatStore();
+  const { messages } = useLoggerStore();
+
+  useEffect(() => {
+    useLoggerStore.getState().fetchMessages();
+  }, []);
 
   return (
     <div className="logger">
-      {loading && <div className="logger-loading">Загрузка...</div>}
       <ul className="logger-list">
-        {messages.map((msg) => (
-          <li key={msg.id} className={`chat-message ${msg.sender}`}>
-            <span className="user">
-              {msg.sender === "user" ? "Вы" : "Бот"}{": "}
-            </span>
-            <span className="chat-message">{msg.message}</span>
+        {messages.map((message) => (
+          <li key={message.id}>
+            <span className="sender">{message.sender}: </span>
+            <span className="message">{message.message}</span>
           </li>
         ))}
       </ul>
