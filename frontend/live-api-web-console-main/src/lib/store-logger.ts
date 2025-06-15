@@ -27,12 +27,11 @@ interface StoreChatState {
 }
 
 export const useLoggerStore = create<StoreChatState>((set) => ({
-  maxLogs: 100,
+  maxLogs: 4,
   messages: [],
   loading: true,
   addMessage: (chatMessage) => {
     set((state) => {
-      console.log("I am here");
       const prevLog = state.messages.at(-1);
       if (prevLog && prevLog.message === chatMessage.message) {
         return {

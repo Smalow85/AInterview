@@ -21,7 +21,6 @@ import { RiSidebarFoldLine, RiSidebarUnfoldLine } from "react-icons/ri";
 import { useLiveAPIContext } from "../../contexts/LiveAPIContext";
 import Logger from "../logger/Logger";
 import "./side-panel.scss";
-import useChatStore from "../../lib/store-chat";
 import { useLoggerStore } from "../../lib/store-logger";
 
 export default function SidePanel() {

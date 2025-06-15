@@ -44,7 +44,7 @@ function AltairComponent() {
   const { client, setConfig, setModel } = useLiveAPIContext();
 
   useEffect(() => {
-    setModel("models/gemini-2.0-flash-exp");
+    setModel("models/gemini-2.0-flash");
     setConfig({
       responseModalities: [Modality.AUDIO],
       speechConfig: {

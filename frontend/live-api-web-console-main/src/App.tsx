@@ -21,6 +21,7 @@ import SidePanel from "./components/side-panel/SidePanel";
 import ControlTray from "./components/control-tray/ControlTray";
 import cn from "classnames";
 import { LiveClientOptions } from "./types";
+import MainPanel from "./components/main-panel/MainPanel";
 
 const API_KEY = process.env.REACT_APP_GEMINI_API_KEY as string;
 if (typeof API_KEY !== "string") {
@@ -42,6 +43,7 @@ function App() {
             <SidePanel />
             <main>
               <div className="main-app-area">
+                <MainPanel />
                 <video
                   className={cn("stream", {
                     hidden: !videoRef.current || !videoStream,

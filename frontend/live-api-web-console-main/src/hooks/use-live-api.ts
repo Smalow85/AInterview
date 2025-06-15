@@ -21,6 +21,10 @@ import { AudioStreamer } from "../lib/audio-streamer";
 import { audioContext } from "../lib/utils";
 import VolMeterWorket from "../lib/worklets/vol-meter";
 import { LiveConnectConfig } from "@google/genai";
+import {
+  FunctionDeclaration,
+  Type,
+} from "@google/genai";
 
 export type UseLiveAPIResults = {
   client: EnhancedGenAILiveClient;
@@ -34,6 +38,26 @@ export type UseLiveAPIResults = {
   volume: number;
 };
 
+const summarize_declaration: FunctionDeclaration = {
+  name: "summarize",
+  description: "Summaraze recent messages from chat history"
+};
+
+const get_context_declaration: FunctionDeclaration = {
+  name: "get_context",
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      prompt: {
+        type: Type.STRING,
+        description:
+          "user entered prompt that must be enriched with context from knowledge base"
+      },
+    },
+    required: ["prompt"],
+  },
+};
+
 export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
   const client = useMemo(() => new EnhancedGenAILiveClient(options), [options]);
   const audioStreamerRef = useRef<AudioStreamer | null>(null);
@@ -41,8 +65,14 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
   const [model, setModel] = useState<string>("models/gemini-2.0-flash-exp");
   const [config, setConfig] = useState<LiveConnectConfig>(
     {
+      systemInstruction: 'You are helpful assistant, answer in Russian',
       inputAudioTranscription: { enabled: true },
       outputAudioTranscription: { enabled: true },
+      tools: [
+        // there is a free-tier quota for search
+        { googleSearch: {} },
+        { functionDeclarations: [summarize_declaration, get_context_declaration] },
+      ],
     }
   );
   const [connected, setConnected] = useState(false);
