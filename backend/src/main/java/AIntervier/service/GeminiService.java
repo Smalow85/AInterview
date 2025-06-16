@@ -4,21 +4,24 @@ import AIntervier.embedding.RemoteEmbeddingService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 public class GeminiService {
 
-    @Value("${gemini.api-key}")
-    private String apiKey;
-
-    @Value("${gemini.endpoint}")
-    private String endpoint;
+    private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
+    private final String endpoint;
+    private final String apiKey;
+    private final List<Map<String, String>> contextBuffer = new ArrayList<>();
+    private final int contextThreshold = 3;
+    private final AtomicBoolean requestInProgress = new AtomicBoolean(false);
+    private final int maxHistorySize = 10;
 
     @Autowired
     private QdrantService qdrantService;
@@ -26,13 +29,41 @@ public class GeminiService {
     @Autowired
     private RemoteEmbeddingService embeddingService;
 
-    private final RestTemplate restTemplate = new RestTemplate();
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public String askGemini(String prompt) {
+    public GeminiService(RestTemplate restTemplate, ObjectMapper objectMapper, String endpoint, String apiKey) {
+        this.restTemplate = restTemplate;
+        this.objectMapper = objectMapper;
+        this.endpoint = endpoint;
+        this.apiKey = apiKey;
+    }
+
+    public String askGemini(String prompt, String role) {
+        synchronized (contextBuffer) {
+            contextBuffer.add(Map.of("role", role, "text", prompt));
+
+            if (contextBuffer.size() >= contextThreshold && !requestInProgress.get()) {
+                requestInProgress.set(true);
+                new Thread(() -> {
+                    String response = sendGeminiRequest();
+                    contextBuffer.clear();
+                    requestInProgress.set(false);
+                }).start();
+                return "Request to Gemini initiated.  Please wait...";
+            } else {
+                return "Context accumulating.  More turns needed.";
+            }
+            }
+    }
+
+    private String sendGeminiRequest() {
         try {
+            List<Map<String, Object>> contextParts = new ArrayList<>();
+            for (Map<String, String> turn : contextBuffer) {
+                contextParts.add(Map.of("role", turn.get("role"), "text", turn.get("text")));
+            }
+
             Map<String, Object> requestBody = Map.of(
-                    "contents", List.of(Map.of("parts", List.of(Map.of("text", prompt))))
+                    "contents", List.of(Map.of("parts", contextParts))
             );
 
             HttpHeaders headers = new HttpHeaders();
@@ -70,6 +101,6 @@ public class GeminiService {
         }
         finalPrompt.append("\nQuestion: ").append(prompt);
 
-        return askGemini(finalPrompt.toString());
+        return askGemini(finalPrompt.toString(), "user");
     }
 }

@@ -1,15 +1,16 @@
 import { GenAILiveClient } from "./genai-live-client";
 import { LiveClientOptions } from "../types";
-import { ChatMessage } from "./store-chat";
+import { ChatMessage } from "../types/chat-message";
+import { ResponseCard } from "../types/response-card";
 import { v4 as uuidv4 } from 'uuid'; // Import from uuid library
 
 export class EnhancedGenAILiveClient extends GenAILiveClient {
     private accumulatedText: string = "";
+    private accumulatedInputText: string = "";
 
     constructor(options: LiveClientOptions) {
         super(options);
         this.onmessage = this.onmessage.bind(this);
-        this.handleUserInput = this.handleUserInput.bind(this);
         this.handleTurnComplete = this.handleTurnComplete.bind(this);
         this.sendRealtimeInput = this.sendRealtimeInput.bind(this);
     }
@@ -18,7 +19,7 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         await super.onmessage(message);
         if (message.serverContent) {
             if ("inputTranscription" in message.serverContent) {
-                this.handleUserInput(message.serverContent.inputTranscription.text);
+                this.accumulatedInputText += message.serverContent.inputTranscription.text;
             }
             if ("outputTranscription" in message.serverContent) {
                 this.accumulatedText += message.serverContent.outputTranscription.text;
@@ -29,17 +30,18 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         }
     }
 
-    private async handleUserInput(text: string) {
-        await this.saveMessageToDatabase({ sessionId: '123', sender: 'user', message: text });
-        const message: ChatMessage = {
-            sender: 'user',
-            message: text,
-            id: uuidv4()
-        }
-        this.emit('messageAdded', message);
-    }
-
     private async handleTurnComplete() {
+        if (this.accumulatedInputText) {
+            await this.saveMessageToDatabase({ sessionId: '123', sender: 'user', message: this.accumulatedInputText });
+            const message: ChatMessage = {
+                sender: 'user',
+                message: this.accumulatedInputText,
+                id: uuidv4()
+        }
+            this.emit('messageAdded', message);
+        } else {
+            console.warn("No input text to save for this turn.");
+        }
         if (this.accumulatedText) {
             await this.saveMessageToDatabase({ sessionId: '123', sender: 'bot', message: this.accumulatedText });
             const message: ChatMessage = {
@@ -48,10 +50,20 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
                 id: uuidv4()
             }
             this.emit('messageAdded', message);
-            this.accumulatedText = '';
-                } else {
-            console.warn("No text to save for this turn.");
+            const res = await this.saveCardToDatabase({ sessionId: '123', sender: 'bot', message: this.accumulatedText });
+            if (res?.data != null) {
+                const card: ResponseCard = {
+                    sender: 'bot',
+                    data: res?.data,
+                    id: uuidv4()
                 }
+                console.log('Card', card)
+                this.emit('cardAdded', card);
+            }
+            this.accumulatedText = '';
+        } else {
+            console.warn("No output text to save for this turn.");
+        }
         this.emit("turncomplete");
     }
 
@@ -70,6 +82,29 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
                 const errorMessage = errorData.message || `HTTP error! status: ${response.status}`;
                 throw new Error(errorMessage);
             }
+        } catch (error) {
+            console.error('Error saving message to database:', error);
+        }
+    }
+
+    async saveCardToDatabase(cardData: { sessionId: string; sender: string; message: string }) {
+        try {
+            const response = await fetch('http://localhost:8080/api/chat/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(cardData)
+            });
+            console.log('Request to ask sent')
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.message || `HTTP error! status: ${response.status}`;
+                throw new Error(errorMessage);
+            }
+            const data = await response.json();
+            console.log(data)
+            return { data: data.reply };
         } catch (error) {
             console.error('Error saving message to database:', error);
         }

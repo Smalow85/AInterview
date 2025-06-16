@@ -3,26 +3,16 @@ package AIntervier.rest;
 import AIntervier.model.ChatMessage;
 import AIntervier.model.ChatRequest;
 import AIntervier.model.ChatResponse;
+import AIntervier.model.ResponseCard;
 import AIntervier.repository.ChatMessageRepository;
+import AIntervier.repository.ResponseCardRepository;
 import AIntervier.service.GeminiService;
-import org.springframework.ai.audio.transcription.AudioTranscription;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import javax.sound.sampled.*;
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @CrossOrigin(origins = "http://localhost:3000")
 @RestController
@@ -35,24 +25,19 @@ public class ChatController {
     @Autowired
     private ChatMessageRepository repository;
 
+    @Autowired
+    private ResponseCardRepository cardRepository;
+
     @PostMapping("/ask")
     public ResponseEntity<ChatResponse> sendMessage(@RequestBody ChatRequest request) {
-        ChatMessage userMessage = new ChatMessage();
-        userMessage.setSessionId(request.getSessionId());
-        userMessage.setSender("user");
-        userMessage.setMessage(request.getMessage());
-        userMessage.setCreated(LocalDateTime.now());
-        repository.save(userMessage);
-
-        String botReply = geminiService.askGemini(request.getMessage());
-
-        ChatMessage botMessage = new ChatMessage();
-        botMessage.setSessionId(request.getSessionId());
-        botMessage.setSender("bot");
-        botMessage.setMessage(botReply);
-        botMessage.setCreated(LocalDateTime.now());
-        repository.save(botMessage);
-
+        String botReply = geminiService.askGemini(request.getMessage(), request.getSender());
+        ResponseCard card = new ResponseCard();
+        card.setData(botReply);
+        card.setSessionId(request.getSessionId());
+        card.setHeader("Header");
+        card.setCreated(LocalDateTime.now());
+        card.setSender(request.getSender());
+        cardRepository.save(card);
         return ResponseEntity.ok(new ChatResponse(botReply));
     }
 
@@ -72,6 +57,16 @@ public class ChatController {
     @GetMapping("/history")
     public List<ChatMessage> getHistory() {
         return repository.findAll();
+    }
+
+    @GetMapping("/card-history")
+    public List<ResponseCard> getCards() {
+        return cardRepository.findAll();
+    }
+
+    @DeleteMapping("/history/clear")
+    public void clearHistory() {
+        repository.deleteAll();
     }
 }
 

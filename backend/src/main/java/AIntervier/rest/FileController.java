@@ -1,24 +1,22 @@
 package AIntervier.rest;
 
+import AIntervier.embedding.FileTextExtractor;
 import AIntervier.embedding.RemoteEmbeddingService;
 import AIntervier.service.FileParserService;
 import AIntervier.service.QdrantService;
 import org.springframework.ai.document.Document;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/files")
 public class FileController {
-
-    @Autowired
-    private FileParserService fileParser;
 
     @Autowired
     private RemoteEmbeddingService embedding;
@@ -27,15 +25,37 @@ public class FileController {
     private QdrantService qdrant;
 
     @PostMapping("/upload")
-    public String upload(@RequestParam("file") MultipartFile file) throws Exception {
-        String text = fileParser.parseTextFile(file.getInputStream());
+    public ResponseEntity<String> upload(@RequestPart("file") MultipartFile file) throws Exception {
+        File temp = null;
+        try {
+            temp = File.createTempFile("upload-", file.getOriginalFilename());
+            file.transferTo(temp);
+            String text = FileTextExtractor.extractText(temp);
 
-        List<String> chunks = List.of(text.split("(?<=\\G.{500})"));
-        List<Document> docs = chunks.stream().map(Document::new).toList();
-        float[] vectors = embedding.embedAll(docs);
+            List<String> chunks = splitIntoChunks(text, 500);
+            List<Document> docs = chunks.stream().map(Document::new).toList();
+            float[] vectors = embedding.embedAll(docs);
 
-        qdrant.upsertVectors("context", List.of(vectors), chunks);
+            qdrant.upsertVectors("context", List.of(vectors), chunks);
 
-        return "Uploaded " + chunks.size() + " chunks to Qdrant";
+            return ResponseEntity.ok("Uploaded " + chunks.size() + " chunks to Qdrant");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Ошибка обработки файла: " + e.getMessage());
+        } finally {
+            if (temp != null) {
+                temp.delete();
+            }
+        }
+    }
+
+    public static List<String> splitIntoChunks(String text, int chunkSize) {
+        List<String> chunks = new ArrayList<>();
+        int length = text.length();
+
+        for (int i = 0; i < length; i += chunkSize) {
+            chunks.add(text.substring(i, Math.min(length, i + chunkSize)));
+        }
+
+        return chunks;
     }
 }

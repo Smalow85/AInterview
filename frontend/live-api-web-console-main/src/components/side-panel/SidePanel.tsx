@@ -28,12 +28,8 @@ export default function SidePanel() {
   const [open, setOpen] = useState(true);
   const loggerRef = useRef<HTMLDivElement>(null);
   const loggerLastHeightRef = useRef<number>(-1);
-  const { messages, addMessage } = useLoggerStore()
+  const { messages, addMessage, clearMessages } = useLoggerStore();
 
-  const [textInput, setTextInput] = useState("");
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  //scroll the log to the bottom when new logs come in
   useEffect(() => {
     if (loggerRef.current) {
       const el = loggerRef.current;
@@ -45,7 +41,6 @@ export default function SidePanel() {
     }
   }, [messages]);
 
-  // listen for log events and store them
   useEffect(() => {
     client.on("messageAdded", addMessage);
     return () => {
@@ -53,13 +48,9 @@ export default function SidePanel() {
     };
   }, [client, addMessage]);
 
-  const handleSubmit = () => {
-    client.send([{ text: textInput }]);
-
-    setTextInput("");
-    if (inputRef.current) {
-      inputRef.current.innerText = "";
-    }
+  const handleClearMessages = () => {
+    console.log("Clear chat history")
+    clearMessages();
   };
 
   return (
@@ -79,36 +70,10 @@ export default function SidePanel() {
       <div className="side-panel-container" ref={loggerRef}>
         <Logger />
       </div>
-      <div className={cn("input-container", { disabled: !connected })}>
-        <div className="input-content">
-          <textarea
-            className="input-area"
-            ref={inputRef}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                e.stopPropagation();
-                handleSubmit();
-              }
-            }}
-            onChange={(e) => setTextInput(e.target.value)}
-            value={textInput}
-          ></textarea>
-          <span
-            className={cn("input-content-placeholder", {
-              hidden: textInput.length,
-            })}
-          >
-            Type&nbsp;something...
-          </span>
-
-          <button
-            className="send-button material-symbols-outlined filled"
-            onClick={handleSubmit}
-          >
-            send
-          </button>
-        </div>
+      <div className="input-container">
+        <button className="clear-button" onClick={handleClearMessages}>
+          Clear Messages
+        </button>
       </div>
     </div>
   );

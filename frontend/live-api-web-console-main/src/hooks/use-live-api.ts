@@ -65,7 +65,7 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
   const [model, setModel] = useState<string>("models/gemini-2.0-flash-exp");
   const [config, setConfig] = useState<LiveConnectConfig>(
     {
-      systemInstruction: 'You are helpful assistant, answer in Russian',
+      systemInstruction: 'You are expirienced java developer, who act as an interviwer on jon interview for java senior developer role, answer in Russian',
       inputAudioTranscription: { enabled: true },
       outputAudioTranscription: { enabled: true },
       tools: [

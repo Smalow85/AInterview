@@ -8,6 +8,7 @@ import org.springframework.ai.embedding.Embedding;
 import org.springframework.stereotype.Service;
 import org.springframework.ai.document.Document;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -46,8 +47,12 @@ public class RemoteEmbeddingService implements EmbeddingModel {
     }
 
     public float[] embedAll(List<Document> docs) {
+        List<Float> vectors = new ArrayList<>();
         List<String> texts = docs.stream().map(Document::getText).toList();
-        List<Float> vectors = embeddingClient.getBatchEmbeddings(texts);
+        for (String text : texts) {
+            List<Float> vector = embeddingClient.getEmbedding(text);
+            vectors.addAll(vector);
+        }
         float[] result = new float[vectors.size()];
         for (int i = 0; i < vectors.size(); i++) {
             result[i] = vectors.get(i);

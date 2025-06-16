@@ -1,6 +1,7 @@
 package AIntervier.rest;
 
 import AIntervier.service.GeminiService;
+import AIntervier.service.QdrantService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,9 @@ public class ToolsController {
 
     @Autowired
     private GeminiService geminiService;
+
+    @Autowired
+    private QdrantService qdrantService;
 
     @PostMapping("/add-context")
     public ResponseEntity<Map<String, Object>> addContext(@RequestBody Map<String, String> requestBody) {
@@ -33,5 +37,15 @@ public class ToolsController {
     @GetMapping("/summarize")
     public ResponseEntity<Map<String, String>> executeTool() {
         return ResponseEntity.ok(Map.of("data", "Here is your summary"));
+    }
+
+    @DeleteMapping("/{collection}")
+    public ResponseEntity<Map<String, String>> deleteCollection(@PathVariable String collection) {
+        try {
+            qdrantService.deleteCollection(collection);
+            return ResponseEntity.ok(Map.of("status", "success"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", e.getMessage()));
+        }
     }
 }

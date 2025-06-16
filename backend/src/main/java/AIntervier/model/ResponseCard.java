@@ -1,13 +1,12 @@
 package AIntervier.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "chat_message")
-public class ChatMessage {
+@Table(name = "response_card")
+public class ResponseCard {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,20 +18,25 @@ public class ChatMessage {
     @Column(name = "sender")
     private String sender;
 
-    @Column(name = "message", nullable = false)
-    private String message;
+    @Column(name = "data", nullable = false)
+    private String data;
+
+    @Column(name = "header", nullable = false)
+    private String header;
 
     @Column(name = "created")
     private LocalDateTime created;
 
-    public ChatMessage() {
+    public ResponseCard() {
     }
 
-    public ChatMessage(String sessionId, String sender, String message) {
+    public ResponseCard(Long id, String sessionId, String sender, String data, String header, LocalDateTime created) {
+        this.id = id;
         this.sessionId = sessionId;
         this.sender = sender;
-        this.message = message;
-        this.created = LocalDateTime.now(); // Set current timestamp on creation
+        this.data = data;
+        this.header = header;
+        this.created = created;
     }
 
     public Long getId() {
@@ -59,12 +63,20 @@ public class ChatMessage {
         this.sender = sender;
     }
 
-    public String getMessage() {
-        return message;
+    public String getData() {
+        return data;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
+    public void setData(String data) {
+        this.data = data;
+    }
+
+    public String getHeader() {
+        return header;
+    }
+
+    public void setHeader(String header) {
+        this.header = header;
     }
 
     public LocalDateTime getCreated() {
@@ -73,17 +85,5 @@ public class ChatMessage {
 
     public void setCreated(LocalDateTime created) {
         this.created = created;
-    }
-
-    // Optional: Override toString() for easier logging and debugging
-    @Override
-    public String toString() {
-        return "ChatMessage{" +
-                "id=" + id +
-                ", sessionId='" + sessionId + '\'' +
-                ", sender='" + sender + '\'' +
-                ", message='" + message + '\'' +
-                ", created=" + created +
-                '}';
     }
 }

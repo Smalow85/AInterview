@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0`r
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -62,6 +62,19 @@ export const useLoggerStore = create<StoreChatState>((set) => ({
       set({ loading: false });
     }
   },
-  clearMessages: () => set({ messages: [] }),
+  clearMessages: async () => {
+    try {
+      const response = await fetch("http://localhost:8080/api/chat/history/clear", {
+        method: "DELETE"
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      set({ messages: [], loading: false });
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      set({ loading: false });
+    }
+  },
   setMaxLogs: (n: number) => set({ maxLogs: n }),
 }));

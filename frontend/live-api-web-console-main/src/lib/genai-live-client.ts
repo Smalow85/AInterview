@@ -33,6 +33,7 @@ import { difference } from "lodash";
 import { LiveClientOptions, StreamingLog } from "../types";
 import { base64ToArrayBuffer } from "./utils";
 import { ChatMessage } from "../types/chat-message";
+import { ResponseCard } from "../types/response-card";
 
 
 /**
@@ -67,6 +68,7 @@ export interface LiveClientEventTypes {
   // Emitted when a model response is received
   modelResponse: (message: string) => void;
   messageAdded: (message: ChatMessage) => void;
+  cardAdded: (card: ResponseCard) => void;
 }
 
 /**

@@ -2,43 +2,61 @@ package AIntervier.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.HashMap;
+import java.util.ArrayList;
+
+
 @Service
 public class QdrantService {
 
-    @Value("${qdrant.url:http://localhost:6333}")
+    @Value("${qdrant.url:http://localhost:6334}")
     private String qdrantUrl;
-
-    private final WebClient client = WebClient.create();
+    private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
+
 
     public void upsertVectors(String collection, List<float[]> vectors, List<String> texts) {
         try {
-            List<Map<String, Object>> payloads = vectors.stream().map((vector) -> Map.of(
-                    "id", UUID.randomUUID().toString(),
-                    "vector", vector,
-                    "payload", Map.of("text", texts.get(vectors.indexOf(vector))))
-            ).toList();
-
-            Map<String, Object> body = Map.of("points", payloads);
-            client.put()
-                    .uri(qdrantUrl + "/collections/" + collection + "/points")
-                    .bodyValue(body)
-                .retrieve()
-                    .toBodilessEntity()
-                .block();
-        } catch (WebClientResponseException e) {
-            throw new RuntimeException("Error upserting vectors: " + e.getMessage(), e);
+            Map<String, Object> body = Map.of("points", createPoints(vectors, texts));
+            restTemplate.put(qdrantUrl + "/collections/" + collection + "/points", body, String.class);
         } catch (Exception e) {
             throw new RuntimeException("Error upserting vectors: " + e.getMessage(), e);
         }
+    }
+
+    public void deleteCollection(String collection) {
+        try {
+            restTemplate.delete(qdrantUrl + "/collections/" + collection);
+            System.out.println("Collection deleted: " + collection);
+        } catch (HttpClientErrorException.NotFound e) {
+            System.out.println("Collection not found: " + collection); // Handle not found
+        } catch (Exception e) {
+            throw new RuntimeException("Error deleting collection: " + e.getMessage(), e);
+        }
+    }
+
+    private List<Map<String, Object>> createPoints(List<float[]> vectors, List<String> texts) {
+        List<Map<String, Object>> points = new ArrayList<>();
+        for (int i = 0; i < vectors.size(); i++) {
+            points.add(Map.of(
+                    "id", UUID.randomUUID().toString(),
+                    "vector", vectors.get(i),
+                    "payload", Map.of("text", texts.get(i))
+            ));
+        }
+        return points;
     }
 
     public List<String> search(String collection, float[] vector, int limit) {
@@ -46,23 +64,26 @@ public class QdrantService {
         if (!exists) {
             createCollection(collection);
         }
+        try{
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("vector", vector);
+            requestBody.put("limit", limit);
 
-        try {
-            Map<String, Object> body = Map.of("vector", vector, "limit", limit);
-            ResponseEntity<Map> response = client.post()
-                    .uri(qdrantUrl + "/collections/" + collection + "/points/search")
-                    .bodyValue(body)
-                    .retrieve()
-                    .toEntity(Map.class)
-                    .block();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
 
-            if(response != null && response.getStatusCode().is2xxSuccessful()){
+            ResponseEntity<Map> response = restTemplate.postForEntity(qdrantUrl + "/collections/" + collection + "/points/search", request, Map.class);
+
+            if(response.getStatusCode().is2xxSuccessful()){
                 return extractTextFromResponse(response.getBody());
             } else{
-                throw new RuntimeException("Error searching: "+ response.getStatusCode().toString());
+                throw new RuntimeException("Error during search: " + response.getStatusCode());
             }
-        } catch (WebClientResponseException e) {
-            throw new RuntimeException("Error searching: " + e.getMessage(), e);
+        } catch (HttpClientErrorException e){
+            throw new RuntimeException("HTTP error during search: " + e.getStatusCode(), e);
+        } catch (Exception e){
+            throw new RuntimeException("Error during search: " + e.getMessage(), e);
         }
     }
 
@@ -77,14 +98,10 @@ public class QdrantService {
 
     private boolean checkCollectionExists(String collection) {
         try {
-            client.get()
-                    .uri(qdrantUrl + "/collections/" + collection)
-                    .retrieve()
-                    .toBodilessEntity()
-                    .block();
+            restTemplate.getForEntity(qdrantUrl + "/collections/" + collection, Void.class);
             return true;
-        } catch (WebClientResponseException e) {
-            return e.getStatusCode().value() == 404;
+        } catch (HttpClientErrorException.NotFound e) {
+            return false;
         } catch (Exception e) {
             throw new RuntimeException("Error checking collection: " + e.getMessage(), e);
         }
@@ -92,28 +109,18 @@ public class QdrantService {
 
     private void createCollection(String collection) {
         String createBody = """
-        {
-            "vectors": {
-                "size": 1536,
-                "distance": "Cosine"
-            }
-        }
-        """;
+                {
+                    "vectors": {
+                        "size": 384,
+                        "distance": "Cosine"
+                    }
+                }
+                """;
 
         try {
-            ResponseEntity<Void> response = client.put()
-                    .uri(qdrantUrl + "/collections/" + collection)
-                    .bodyValue(createBody)
-                    .retrieve()
-                    .toBodilessEntity()
-                    .block();
-
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                throw new RuntimeException("Error creating collection: " + response.getStatusCode());
-            }
-
+            restTemplate.put(qdrantUrl + "/collections/" + collection, createBody, String.class);
             System.out.println("Collection created: " + collection);
-        } catch (WebClientResponseException e) {
+        } catch (Exception e) {
             throw new RuntimeException("Error creating collection: " + e.getMessage(), e);
         }
     }

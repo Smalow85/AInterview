@@ -1,7 +1,6 @@
 .side-panel {
   background: var(--Neutral-00);
   width: 40px;
-  /* when closed */
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -14,22 +13,17 @@
   font-style: normal;
   font-weight: 400;
   line-height: 160%;
-  /* 20.8px */
-
   .hidden {
     display: none !important;
   }
 
   &.open {
-    .top {
-      h2 {
+    .top h2 {
         left: 0%;
         display: block;
         opacity: 1;
       }
     }
-  }
-
   .top {
     display: flex;
     width: calc(100% - 45px);
@@ -46,15 +40,10 @@
       font-style: normal;
       font-weight: 500;
       line-height: 16px;
-      /* 100% */
-
       opacity: 0;
       display: none;
       left: -100%;
-      transition:
-        opacity 0.2s ease-in,
-        left 0.2s ease-in,
-        display 0.2s ease-in;
+      transition: opacity 0.2s ease-in, left 0.2s ease-in, display 0.2s ease-in;
       transition-behavior: allow-discrete;
 
       @starting-style {
@@ -132,76 +121,36 @@
     flex-grow: 1;
     overflow-x: hidden;
     overflow-y: auto;
-    /*scrollbar-gutter: stable both-edges;*/
   }
 
   .input-container {
-    height: 50px;
-    flex-grow: 0;
     flex-shrink: 0;
-    border-top: 1px solid var(--Neutral-20);
-    padding: 14px 25px;
-    overflow: hidden;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    width: 100%;
+    padding: 16px;
+    box-sizing: border-box;
 
-    .input-content {
-      position: relative;
-      background: var(--Neutral-10);
-      border: 1px solid var(--Neutral-15);
-      height: 22px;
-      border-radius: 10px;
-      padding: 11px 18px;
+    .clear-button {
+      background-color: var(--Neutral-40);
+      color: white;
+      padding: 12px 20px;
+      border: 1px solid rgb(78, 76, 76);
+      border-radius: 4px;
+  cursor: pointer;
+      width: 100%;
+      box-sizing: border-box;
+      transition: background-color 0.3s ease;
 
-      .send-button {
-        position: absolute;
-        top: 50%;
-        right: 0;
-        transform: translate(0, -50%);
-        background: none;
-        border: 0;
-        color: var(--Neutral-20);
-        cursor: pointer;
-        transition: color 0.1s ease-in;
-        z-index: 2;
+      &:hover {
+        background-color: var(--Neutral-30);
+}
 
-        &:hover {
-          color: var(--Neutral-60);
-        }
-      }
-
-      .input-area {
-        background: none;
-        color: var(--Neutral-90);
-        field-sizing: content;
-        position: absolute;
-        top: 0;
-        left: 0;
-        z-index: 2;
-        display: inline-block;
-        width: calc(100% - 72px);
-        max-height: 20px;
-        outline: none;
-        --webkit-box-flex: 1;
-        flex: 1;
-        word-break: break-word;
-        overflow: auto;
-        padding: 14px 18px;
-        border: 0;
-        resize: none;
-      }
-
-      .input-content-placeholder {
-        position: absolute;
-        left: 0;
-        top: 0;
-        display: flex;
-        align-items: center;
-        z-index: 1;
-        height: 100%;
-        width: 100%;
-        pointer-events: none;
-        user-select: none;
-        padding: 0px 18px;
-        white-space: pre-wrap;
+      &.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
       }
     }
   }
