@@ -3,6 +3,7 @@ package AIntervier.model;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "response_card")
@@ -23,6 +24,12 @@ public class ResponseCard {
 
     @Column(name = "header", nullable = false)
     private String header;
+
+    @Column(name = "tags")
+    private List<String> tags;
+
+    @Column(name = "summary")
+    private String summary;
 
     @Column(name = "created")
     private LocalDateTime created;
@@ -85,5 +92,21 @@ public class ResponseCard {
 
     public void setCreated(LocalDateTime created) {
         this.created = created;
+    }
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
+
+    public String getSummary() {
+        return summary;
+    }
+
+    public void setSummary(String summary) {
+        this.summary = summary;
     }
 }

@@ -32,8 +32,8 @@ export default function Logger() {
       <ul className="logger-list">
         {messages.map((message) => (
           <li key={message.id}>
-            <span className="sender">{message.sender}: </span>
-            <span className="message">{message.message}</span>
+            <div className="sender">{message.sender}:</div>
+            <div className="message">{message.message}</div>
           </li>
         ))}
       </ul>

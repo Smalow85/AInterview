@@ -12,7 +12,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @CrossOrigin(origins = "http://localhost:3000")
 @RestController
@@ -29,16 +31,22 @@ public class ChatController {
     private ResponseCardRepository cardRepository;
 
     @PostMapping("/ask")
-    public ResponseEntity<ChatResponse> sendMessage(@RequestBody ChatRequest request) {
-        String botReply = geminiService.askGemini(request.getMessage(), request.getSender());
-        ResponseCard card = new ResponseCard();
-        card.setData(botReply);
-        card.setSessionId(request.getSessionId());
-        card.setHeader("Header");
-        card.setCreated(LocalDateTime.now());
-        card.setSender(request.getSender());
-        cardRepository.save(card);
-        return ResponseEntity.ok(new ChatResponse(botReply));
+    public ResponseEntity<ResponseCard> sendMessage(@RequestBody ChatRequest request) {
+        Map<String, Object> botReply = geminiService.askGemini(request.getMessage(), request.getSender());
+        if (!botReply.isEmpty() ) {
+            ResponseCard card = new ResponseCard();
+            card.setData((String) botReply.get("data"));
+            card.setSessionId(request.getSessionId());
+            card.setHeader((String) botReply.get("header"));
+            card.setTags((List<String>) botReply.getOrDefault("tags", new ArrayList<>()));
+            card.setSummary((String) botReply.get("summary"));
+            card.setCreated(LocalDateTime.now());
+            card.setSender(request.getSender());
+            cardRepository.save(card);
+            return ResponseEntity.ok(card);
+        } else {
+            return ResponseEntity.noContent().build();
+        }
     }
 
     @PostMapping("/save")
@@ -54,14 +62,14 @@ public class ChatController {
         return ResponseEntity.ok(new ChatResponse(message.getMessage()));
     }
 
-    @GetMapping("/history")
-    public List<ChatMessage> getHistory() {
-        return repository.findAll();
+    @GetMapping("/history/{sessionId}")
+    public List<ChatMessage> getHistory(@PathVariable String sessionId) {
+        return repository.findBySessionId(sessionId);
     }
 
-    @GetMapping("/card-history")
-    public List<ResponseCard> getCards() {
-        return cardRepository.findAll();
+    @GetMapping("/card-history/{sessionId}")
+    public List<ResponseCard> getCards(@PathVariable String sessionId) {
+        return cardRepository.findBySessionId(sessionId);
     }
 
     @DeleteMapping("/history/clear")

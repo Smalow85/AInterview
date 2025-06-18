@@ -4,24 +4,29 @@ import AIntervier.embedding.RemoteEmbeddingService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 public class GeminiService {
 
-    private final RestTemplate restTemplate;
-    private final ObjectMapper objectMapper;
-    private final String endpoint;
-    private final String apiKey;
-    private final List<Map<String, String>> contextBuffer = new ArrayList<>();
-    private final int contextThreshold = 3;
-    private final AtomicBoolean requestInProgress = new AtomicBoolean(false);
-    private final int maxHistorySize = 10;
+    @Value("${gemini.api-key}")
+    private String apiKey;
+
+    @Value("${gemini.endpoint}")
+    private String endpoint;
 
     @Autowired
     private QdrantService qdrantService;
@@ -29,41 +34,72 @@ public class GeminiService {
     @Autowired
     private RemoteEmbeddingService embeddingService;
 
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final List<Map<String, String>> contextBuffer = new ArrayList<>();
+    private final int contextThreshold = 3;
+    private final AtomicBoolean requestInProgress = new AtomicBoolean(false);
+    private final ExecutorService executor = Executors.newFixedThreadPool(5);
 
-    public GeminiService(RestTemplate restTemplate, ObjectMapper objectMapper, String endpoint, String apiKey) {
-        this.restTemplate = restTemplate;
-        this.objectMapper = objectMapper;
-        this.endpoint = endpoint;
-        this.apiKey = apiKey;
-    }
-
-    public String askGemini(String prompt, String role) {
+    public Map<String, Object> askGemini(String prompt, String role) {
         synchronized (contextBuffer) {
             contextBuffer.add(Map.of("role", role, "text", prompt));
 
             if (contextBuffer.size() >= contextThreshold && !requestInProgress.get()) {
-                requestInProgress.set(true);
-                new Thread(() -> {
-                    String response = sendGeminiRequest();
+                CompletableFuture<Map<String, Object>> future = CompletableFuture.supplyAsync(() -> {
+                    requestInProgress.set(true);
+                    Map<String, Object> response = sendGeminiRequest();
                     contextBuffer.clear();
                     requestInProgress.set(false);
-                }).start();
-                return "Request to Gemini initiated.  Please wait...";
+                    return response;
+                }, executor);
+                try {
+                    return future.get();
+                } catch (InterruptedException | ExecutionException e) {
+                    return Map.of("error", e.getMessage());
+                }
             } else {
-                return "Context accumulating.  More turns needed.";
+                return Map.of();
             }
-            }
+        }
     }
 
-    private String sendGeminiRequest() {
+    private Map<String, Object> sendGeminiRequest() {
         try {
-            List<Map<String, Object>> contextParts = new ArrayList<>();
+            // Prepare the prompt with context
+            StringBuilder promptBuilder = new StringBuilder();
+            promptBuilder.append("Context:\n");
             for (Map<String, String> turn : contextBuffer) {
-                contextParts.add(Map.of("role", turn.get("role"), "text", turn.get("text")));
+                promptBuilder.append(turn.get("text")).append("\n");
             }
+            promptBuilder.append("\nRespond strictly in valid JSON format using this structure. ");
+            promptBuilder.append("Always fill in the following fields: \"tags\", \"data\", \"header\", and \"summary\". ");
+            promptBuilder.append("The field \"codeExamples\" is optional and should only be included if relevant.\n");
+
+            promptBuilder.append("{\n");
+            promptBuilder.append("  \"tags\": [\"...\"],\n");
+            promptBuilder.append("  \"data\": \"...\",\n");
+            promptBuilder.append("  \"header\": \"...\",\n");
+            promptBuilder.append("  \"summary\": \"...\",\n");
+            promptBuilder.append("  \"codeExamples\": [\n");
+            promptBuilder.append("    {\n");
+            promptBuilder.append("      \"language\": \"...\",\n");
+            promptBuilder.append("      \"code\": \"...\"\n");
+            promptBuilder.append("    }\n");
+            promptBuilder.append("  ]\n");
+            promptBuilder.append("}\n");
+
+
+            String prompt = promptBuilder.toString();
+
+            // Build Gemini-compliant request body
+            Map<String, Object> userMessage = Map.of(
+                    "role", "user",
+                    "parts", List.of(Map.of("text", prompt))
+            );
 
             Map<String, Object> requestBody = Map.of(
-                    "contents", List.of(Map.of("parts", contextParts))
+                    "contents", List.of(userMessage)
             );
 
             HttpHeaders headers = new HttpHeaders();
@@ -71,23 +107,83 @@ public class GeminiService {
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
 
-            ResponseEntity<String> response = restTemplate.postForEntity(
+            ResponseEntity<String> response = restTemplate.exchange(
                     endpoint + "?key=" + apiKey,
+                    HttpMethod.POST,
                     request,
                     String.class
             );
 
-            JsonNode json = objectMapper.readTree(response.getBody());
-            return json
-                    .path("candidates")
-                    .path(0)
-                    .path("content")
-                    .path("parts")
-                    .path(0)
-                    .path("text")
-                    .asText("No answer");
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                throw new Exception("Error from Gemini: HTTP " + response.getStatusCode() + " " + response.getBody());
+            }
+
+            // Parse Gemini response
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(response.getBody());
+            JsonNode candidates = root.path("candidates");
+
+            if (!candidates.isArray() || candidates.isEmpty()) {
+                throw new Exception("Error: Gemini returned no candidates");
+            }
+
+            JsonNode content = candidates.get(0).path("content");
+            JsonNode parts = content.path("parts");
+
+            if (!parts.isArray() || parts.isEmpty()) {
+                throw new Exception("Error: Gemini response is missing parts");
+            }
+
+            String generatedText = parts.get(0).path("text").asText();
+
+            int jsonStart = generatedText.indexOf('{');
+            int jsonEnd = generatedText.lastIndexOf('}');
+            if (jsonStart == -1 || jsonEnd == -1 || jsonEnd <= jsonStart) {
+                throw new Exception("Error: Gemini response does not contain valid JSON structure");
+            }
+
+            String cleanedJson = generatedText.substring(jsonStart, jsonEnd + 1);
+
+
+            // Attempt to parse generated JSON
+            JsonNode result = mapper.readTree(cleanedJson);
+
+            List<String> tags = new ArrayList<>();
+            JsonNode tagsNode = result.path("tags");
+            if (tagsNode.isArray()) {
+                for (JsonNode tag : tagsNode) {
+                    tags.add(tag.asText());
+                }
+            }
+
+            String data = result.path("data").asText("");
+            String header = result.path("header").asText("");
+            String summary = result.path("summary").asText("");
+
+            List<Map<String, String>> codeExamples = new ArrayList<>();
+            JsonNode codeExamplesNode = result.path("code examples");
+            if (codeExamplesNode.isArray()) {
+                for (JsonNode exampleNode : codeExamplesNode) {
+                    if (exampleNode.has("language") && exampleNode.has("code")) {
+                        codeExamples.add(Map.of(
+                                "language", exampleNode.get("language").asText(),
+                                "code", exampleNode.get("code").asText()
+                        ));
+                    }
+                }
+            }
+
+            Map<String, Object> validatedResponse = new HashMap<>();
+            validatedResponse.put("tags", tags);
+            validatedResponse.put("data", data);
+            validatedResponse.put("header", header);
+            validatedResponse.put("summary", summary);
+            validatedResponse.put("codeExamples", codeExamples);
+
+            return validatedResponse;
+
         } catch (Exception e) {
-            return "Error from Gemini: " + e.getMessage();
+            return Map.of("error", "Error from Gemini: " + e.getMessage());
         }
     }
 
@@ -101,6 +197,6 @@ public class GeminiService {
         }
         finalPrompt.append("\nQuestion: ").append(prompt);
 
-        return askGemini(finalPrompt.toString(), "user");
+        return askGemini(finalPrompt.toString(), "user").toString();
     }
 }

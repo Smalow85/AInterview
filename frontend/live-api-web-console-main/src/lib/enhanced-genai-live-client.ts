@@ -31,8 +31,9 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
     }
 
     private async handleTurnComplete() {
+        const storedSessionId = localStorage.getItem('sessionId');
         if (this.accumulatedInputText) {
-            await this.saveMessageToDatabase({ sessionId: '123', sender: 'user', message: this.accumulatedInputText });
+            await this.saveMessageToDatabase({ sessionId: storedSessionId || '-1', sender: 'user', message: this.accumulatedInputText });
             const message: ChatMessage = {
                 sender: 'user',
                 message: this.accumulatedInputText,
@@ -43,18 +44,25 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
             console.warn("No input text to save for this turn.");
         }
         if (this.accumulatedText) {
-            await this.saveMessageToDatabase({ sessionId: '123', sender: 'bot', message: this.accumulatedText });
+            await this.saveMessageToDatabase({ sessionId: storedSessionId || '-1', sender: 'bot', message: this.accumulatedText });
             const message: ChatMessage = {
                 sender: 'bot',
                 message: this.accumulatedText,
                 id: uuidv4()
             }
             this.emit('messageAdded', message);
-            const res = await this.saveCardToDatabase({ sessionId: '123', sender: 'bot', message: this.accumulatedText });
-            if (res?.data != null) {
+                const res = await this.saveCardToDatabase({ sessionId: storedSessionId || '-1', sender: 'bot', message: this.accumulatedText });
+                if (res?.status != 204) {
+                const data: ResponseCard = res?.data;
                 const card: ResponseCard = {
-                    sender: 'bot',
-                    data: res?.data,
+                    sender: data.sender,
+                    header: data.header,
+                    expanded: data.expanded,
+                    data: data.data,
+                    tags: data.tags,
+                    codeExample: data.codeExample,
+                    summary: data.summary,
+                    error: data.error,
                     id: uuidv4()
                 }
                 console.log('Card', card)
@@ -96,15 +104,20 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
                 },
                 body: JSON.stringify(cardData)
             });
-            console.log('Request to ask sent')
+            console.log(response)
+
+            if (response.status === 204) {
+                return { status: 204, data: null };
+            }
+
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
                 const errorMessage = errorData.message || `HTTP error! status: ${response.status}`;
                 throw new Error(errorMessage);
             }
+
             const data = await response.json();
-            console.log(data)
-            return { data: data.reply };
+            return { status: response.status, data };
         } catch (error) {
             console.error('Error saving message to database:', error);
         }

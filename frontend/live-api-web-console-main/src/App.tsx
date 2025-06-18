@@ -22,7 +22,7 @@ import ControlTray from "./components/control-tray/ControlTray";
 import cn from "classnames";
 import { LiveClientOptions } from "./types";
 import MainPanel from "./components/main-panel/MainPanel";
-import DocumentList from "./components/document-list/DocumentList";
+import DocumentPanel from "./components/document-panel/DocumentPanel";
 
 const API_KEY = process.env.REACT_APP_GEMINI_API_KEY as string;
 if (typeof API_KEY !== "string") {
@@ -44,7 +44,9 @@ function App() {
             <SidePanel />
             <main>
               <div className="main-app-area">
-                <MainPanel />
+                <div className="main-app-area-main-panel">
+                  <MainPanel />
+                </div>
                 <video
                   className={cn("stream", {
                     hidden: !videoRef.current || !videoStream,
@@ -54,16 +56,17 @@ function App() {
                   playsInline
                 />
               </div>
-
-              <ControlTray
-                videoRef={videoRef}
-                supportsVideo={true}
-                onVideoStreamChange={setVideoStream}
-                enableEditingSettings={true}
-              >
-              </ControlTray>
+              <div className="control-tray-container">
+                <ControlTray
+                  videoRef={videoRef}
+                  supportsVideo={true}
+                  onVideoStreamChange={setVideoStream}
+                  enableEditingSettings={true}
+                >
+                </ControlTray>
+              </div>  
             </main>
-            <DocumentList />
+            <DocumentPanel />
           </div>
         </div>
       </LiveAPIProvider>

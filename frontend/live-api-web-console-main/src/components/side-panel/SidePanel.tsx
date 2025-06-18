@@ -1,34 +1,57 @@
-/**
- * Copyright 2024 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-import "./react-select.scss";
-import cn from "classnames";
 import { useEffect, useRef, useState } from "react";
-import { RiSidebarFoldLine, RiSidebarUnfoldLine } from "react-icons/ri";
 import { useLiveAPIContext } from "../../contexts/LiveAPIContext";
 import Logger from "../logger/Logger";
 import "./side-panel.scss";
 import { useLoggerStore } from "../../lib/store-logger";
+import { v4 as uuidv4 } from 'uuid';
 
 export default function SidePanel() {
-  const { connected, client } = useLiveAPIContext();
-  const [open, setOpen] = useState(true);
+  const { client } = useLiveAPIContext();
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const loggerRef = useRef<HTMLDivElement>(null);
   const loggerLastHeightRef = useRef<number>(-1);
   const { messages, addMessage, clearMessages } = useLoggerStore();
+
+  useEffect(() => {
+    const storedSessionId = localStorage.getItem('sessionId');
+    if (storedSessionId) {
+      setSessionId(storedSessionId);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (sessionId) {
+      localStorage.setItem('sessionId', sessionId);
+    } else {
+      localStorage.removeItem('sessionId');
+    }
+  }, [sessionId]);
+
+  const handleStartConversation = async () => {
+    const newSessionId = uuidv4();
+    setSessionId(newSessionId);
+    console.log("Conversation started with session ID:", newSessionId);
+  };
+
+  const handleEndConversation = async () => {
+    if (sessionId) {
+      try {
+        const response = await fetch(`/analyze?sessionId=${sessionId}`, {
+          method: 'POST',
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log("Analysis results:", data);
+      } catch (error) {
+        console.error("Error analyzing conversation:", error);
+      }
+      setSessionId(null);
+    } else {
+      console.log("No active conversation to end.");
+    }
+  };
 
   useEffect(() => {
     if (loggerRef.current) {
@@ -54,26 +77,30 @@ export default function SidePanel() {
   };
 
   return (
-    <div className={`side-panel ${open ? "open" : ""}`}>
-      <header className="top">
-        <h2>History</h2>
-        {open ? (
-          <button className="opener" onClick={() => setOpen(false)}>
-            <RiSidebarFoldLine color="#b4b8bb" />
-          </button>
-        ) : (
-          <button className="opener" onClick={() => setOpen(true)}>
-            <RiSidebarUnfoldLine color="#b4b8bb" />
-          </button>
-        )}
-      </header>
+    <div className={"side-panel"}>
+      <div className="side-panel-top">
+        <div className="side-panel-title">Chat history</div>
+      </div>
       <div className="side-panel-container" ref={loggerRef}>
         <Logger />
       </div>
       <div className="input-container">
+        {messages.length > 0 ? (
+          <>
         <button className="clear-button" onClick={handleClearMessages}>
           Clear Messages
         </button>
+            {sessionId && (
+          <button className="end-conversation-button" onClick={handleEndConversation}>
+            End Conversation
+          </button>
+            )}
+          </>
+        ) : (
+          <button className="start-conversation-button" onClick={handleStartConversation}>
+            Start Conversation
+          </button>
+        )}
       </div>
     </div>
   );
