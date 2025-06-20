@@ -52,6 +52,7 @@ export const useLoggerStore = create<StoreChatState>((set) => ({
   fetchMessages: async () => {
     try {
       const storedSessionId = localStorage.getItem('sessionId');
+      console.log(storedSessionId)
       const response = await fetch(`http://localhost:8080/api/chat/history/${storedSessionId}`); 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

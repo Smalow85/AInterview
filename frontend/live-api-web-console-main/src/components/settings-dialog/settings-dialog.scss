@@ -19,38 +19,6 @@
     font-style: italic;
   }
 
-  /*.connected-indicator {
-    &:before {
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: 0;
-      display: block;
-      content: "";
-      width: 100%;
-      height: 100%;
-      background-color: var(--Neutral-5);
-      opacity: 0.85;
-    }
-    z-index: 1;
-    
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--Neutral-80);
-
-    p {
-      z-index: 1;
-    }
-  }*/
-
   h4 {
     margin-left: 4px;
     margin-bottom: 10px;
@@ -67,7 +35,7 @@
     border-radius: 18px;
     color: var(--Neutral-80);
     border: 0;
-    padding: 0;
+    padding: 15;
     margin: 0;
     position: fixed;
     top: -400px;
@@ -95,7 +63,11 @@
     padding: 8px 0;
   }
 
-  textarea.system {
+  .setting-row {
+    padding: 5px;
+  }
+
+  input.system {
     border-radius: 12px;
     background-color: var(--Neutral-15);
     color: var(--Neutral-80);
@@ -115,61 +87,30 @@
     box-sizing: border-box;
   }
 
+  input.system-small {
+    border-radius: 12px;
+    background-color: var(--Neutral-15);
+    color: var(--Neutral-80);
+    margin-top: 8px;
+    font-family:
+      Google Sans,
+      sans-serif;
+    line-height: 21px;
+    font-size: 16px;
+    field-sizing: content;
+    width: calc(100% - 16px);
+    min-height: 60px;
+    height: 60px;
+    padding: 8px;
+    border: 0;
+    resize: vertical;
+    box-sizing: border-box;
+  }
+
   .function-declarations {
     font-size: 66%;
     width: 100%;
     /* Enables vertical scrolling */
   }
-
-  .fd-rows {
-    display: grid;
-    grid-template-columns: 1fr 0.5fr 1.5fr;
-    row-gap: 6px;
-    /* Three columns, last one takes remaining space */
-  }
-
-  .fd-row-name {
-    font-family: "Space mono";
-    font-size: 12px;
-    font-weight: bold;
-    color: var(--Blue-400);
-    font-weight: bold;
-    border-radius: 8px;
-    border: 1px solid var(--Neutral-20, #2a2f31);
-    padding: 10px;
-  }
-
-  .fd-row-args {
-    padding: 12px;
-  }
-
-  .fd-row-args > *:not(:last-child)::after {
-    content: ", ";
-  }
-
-  .fd-row {
-    display: contents;
-    color: var(--Neutral-70);
-    /* Make data-row participate in the grid layout of data-rows, without being an additional grid row */
-    align-items: center;
-    /* Vertically center the content of the row */
-    /* Bottom border for each row */
-    height: 35px;
-    /* The row height */
-  }
-
-  .fd-row-description {
-    flex: 1;
-    background: transparent;
-    border: none;
-    color: inherit;
-    font-size: inherit;
-    padding: 2px 4px;
-
-    &:hover,
-    &:focus {
-      background: var(--Neutral-20);
-      outline: none;
-    }
-  }
 }
+
