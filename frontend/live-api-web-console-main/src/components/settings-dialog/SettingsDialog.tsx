@@ -2,27 +2,33 @@ import {
   ChangeEvent,
   FormEventHandler,
   useCallback,
-  useEffect,
   useState,
+  useEffect
 } from "react";
 import "./settings-dialog.scss";
 import { useLiveAPIContext } from "../../contexts/LiveAPIContext";
+import { EditableUserSettings } from "../../types/settings";
 import ResponseModalitySelector from "./ResponseModalitySelector";
 import VoiceSelector from "./VoiceSelector";
 import { useSettingsStore } from "../../lib/store-settings";
 import { UserSettings } from "../../types/settings";
 
+const fieldLabels: {[key in keyof EditableUserSettings]: string} = {
+  firstName: "First Name",
+  lastName: "Last Name",
+  email: "Email",
+  systemInstruction: "System Prompt",
+};
+
 export default function SettingsDialog() {
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const editableFields: (keyof EditableUserSettings)[] = ['firstName', 'lastName', 'email', 'systemInstruction'];
   const { config, setConfig } = useLiveAPIContext();
-  const { settings, updateSettings, fetchSettings } = useSettingsStore(); //Import from store
-
+  const { settings, updateSettings, fetchSettings } = useSettingsStore();
 
   const handleSettingChange: FormEventHandler<HTMLInputElement> = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
-      updateSettings({ ...settings, [e.target.name]: e.target.value }); //Directly pass the new object
+      updateSettings({ ...settings, [e.target.name]: e.target.value });
     },
     [settings, updateSettings]
   );
@@ -41,14 +47,13 @@ export default function SettingsDialog() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data: UserSettings = await response.json();
-      setConfig({ ...config, systemInstruction: data.systemInstructions }); //Update config
+      setConfig({ ...config, systemInstruction: data.systemInstruction });
       updateSettings(data)
       setOpen(false);
     } catch (error: any) {
-      setError(error.message);
       console.error("Error saving settings:", error);
     } finally {
-      setLoading(false);
+  
     }
   }, [settings, setConfig, config]);
 
@@ -66,22 +71,24 @@ export default function SettingsDialog() {
             <VoiceSelector />
           </div>
           <div>
-            {Object.entries(settings).map(([key, value]) => (
+            {Object.entries(settings)
+              .filter(([key]) => editableFields.includes(key as keyof EditableUserSettings))
+              .map(([key, value]) => (
               <div key={key} className="setting-row">
-                <label htmlFor={key}>{key.replace(/_/g, " ")}:</label>
+                <label htmlFor={key}>{fieldLabels[key as keyof typeof fieldLabels]}:</label>
                 <input
                   className="system-small"
                   type="text"
                   id={key}
-                  name={key} // Add name attribute
+                  name={key}
                   value={value || ""}
                   onChange={handleSettingChange}
                 />
               </div>
             ))}
           </div>
-          <button className="action-button material-symbols-outlined" onClick={saveSettings}>
-            <h2>Save</h2>
+          <button className="save-button material-symbols-outlined" onClick={saveSettings}>
+            Save
           </button>
         </div>
       </dialog>

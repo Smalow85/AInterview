@@ -3,6 +3,7 @@ import { LiveClientOptions } from "../types";
 import { ChatMessage } from "../types/chat-message";
 import { ResponseCard } from "../types/response-card";
 import { v4 as uuidv4 } from 'uuid'; // Import from uuid library
+import { getCurrentUserSettingsAsync } from "./store-settings";
 
 export class EnhancedGenAILiveClient extends GenAILiveClient {
     private accumulatedText: string = "";
@@ -31,9 +32,9 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
     }
 
     private async handleTurnComplete() {
-        const storedSessionId = localStorage.getItem('sessionId');
+        const userSettings = await getCurrentUserSettingsAsync();
         if (this.accumulatedInputText) {
-            await this.saveMessageToDatabase({ sessionId: storedSessionId || '-1', sender: 'user', message: this.accumulatedInputText });
+            await this.saveMessageToDatabase({ sessionId: userSettings.activeSessionId, sender: 'user', message: this.accumulatedInputText });
             const message: ChatMessage = {
                 sender: 'user',
                 message: this.accumulatedInputText,
@@ -44,14 +45,14 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
             console.warn("No input text to save for this turn.");
         }
         if (this.accumulatedText) {
-            await this.saveMessageToDatabase({ sessionId: storedSessionId || '-1', sender: 'bot', message: this.accumulatedText });
+            await this.saveMessageToDatabase({ sessionId: userSettings.activeSessionId, sender: 'bot', message: this.accumulatedText });
             const message: ChatMessage = {
                 sender: 'bot',
                 message: this.accumulatedText,
                 id: uuidv4()
             }
             this.emit('messageAdded', message);
-                const res = await this.saveCardToDatabase({ sessionId: storedSessionId || '-1', sender: 'bot', message: this.accumulatedText });
+                const res = await this.saveCardToDatabase({ sessionId: userSettings.activeSessionId, sender: 'bot', message: this.accumulatedText });
                 if (res?.status != 204) {
                 const data: ResponseCard = res?.data;
                 const card: ResponseCard = {

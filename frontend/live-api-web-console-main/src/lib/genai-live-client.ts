@@ -34,6 +34,7 @@ import { LiveClientOptions, StreamingLog } from "../types";
 import { base64ToArrayBuffer } from "./utils";
 import { ChatMessage } from "../types/chat-message";
 import { ResponseCard } from "../types/response-card";
+import { UserSettings } from "../types/settings";
 
 
 /**
@@ -69,6 +70,7 @@ export interface LiveClientEventTypes {
   modelResponse: (message: string) => void;
   messageAdded: (message: ChatMessage) => void;
   cardAdded: (card: ResponseCard) => void;
+  settingsUpdated: (settings: UserSettings) => void;
 }
 
 /**

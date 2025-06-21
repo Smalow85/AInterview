@@ -14,6 +14,8 @@
   justify-content: center;
   gap: 4px;
   height: 70px;
+  border: 2px;
+  border-color: var(--Neutral-80);
 
   .connected-indicator {
     font-style: italic;
@@ -24,24 +26,26 @@
     margin-bottom: 10px;
   }
 
-  button {
-    background: none;
-    border: 0;
+  h1 {
+    margin-left: 10px;
+    margin-bottom: 10px;
   }
 
   .dialog {
-    font-family: "Space mono";
-    background: var(--Neutral-5);
+    font-family: var(--font-family);
+    font-size: 1.35rem;
+    letter-spacing: 0.05em;
+    background: var(--Neutral-10);
     border-radius: 18px;
     color: var(--Neutral-80);
-    border: 0;
+    border: 1px solid var(--Neutral-60);
     padding: 15;
     margin: 0;
     position: fixed;
-    top: -400px;
+    top: -350px;
     right: 0;
     width: 696px;
-    height: 593px;
+    height: 623px;
     transform: translate(-25%, -50%);
   }
 
@@ -64,7 +68,7 @@
   }
 
   .setting-row {
-    padding: 5px;
+    padding: 7px;
   }
 
   input.system {
@@ -72,11 +76,9 @@
     background-color: var(--Neutral-15);
     color: var(--Neutral-80);
     margin-top: 8px;
-    font-family:
-      Google Sans,
-      sans-serif;
     line-height: 21px;
-    font-size: 16px;
+    font-size: 18px;
+    border: 1px solid var(--Neutral-60);
     field-sizing: content;
     width: calc(100% - 16px);
     min-height: 150px;
@@ -91,12 +93,11 @@
     border-radius: 12px;
     background-color: var(--Neutral-15);
     color: var(--Neutral-80);
-    margin-top: 8px;
-    font-family:
-      Google Sans,
-      sans-serif;
-    line-height: 21px;
-    font-size: 16px;
+    font-family: var(--font-family);
+    border: 1px solid var(--Neutral-60);
+    margin-top: 18px;
+    line-height: 15px;
+    font-size: 18px;
     field-sizing: content;
     width: calc(100% - 16px);
     min-height: 60px;
@@ -110,7 +111,41 @@
   .function-declarations {
     font-size: 66%;
     width: 100%;
-    /* Enables vertical scrolling */
   }
+
+  .save-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 12px;
+    font-size: 18px;
+    background-color: var(--Accent-60); // fallback если переменная не задана
+    color: var(--Neutral-80);
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+
+  &:hover {
+    background-color: var(--Neutral-60, #43a047);
+  }
+
+  &:active {
+    background-color: var(--Neutral-80, #388e3c);
+  }
+
+  &:disabled {
+    background-color: var(--Neutral-40);
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  &.material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+    font-size: 42px;
+  }
+}
 }
 

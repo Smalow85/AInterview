@@ -16,6 +16,7 @@
 
 import { create } from "zustand";
 import { ChatMessage } from "./store-chat";
+import { getCurrentUserSettingsAsync } from "./store-settings";
 
 interface StoreChatState {
   maxLogs: number;
@@ -51,9 +52,9 @@ export const useLoggerStore = create<StoreChatState>((set) => ({
   },
   fetchMessages: async () => {
     try {
-      const storedSessionId = localStorage.getItem('sessionId');
-      console.log(storedSessionId)
-      const response = await fetch(`http://localhost:8080/api/chat/history/${storedSessionId}`); 
+      const user = await getCurrentUserSettingsAsync();
+      console.log("User is: ", user)
+      const response = await fetch(`http://localhost:8080/api/chat/history/${user.activeSessionId}`); 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
