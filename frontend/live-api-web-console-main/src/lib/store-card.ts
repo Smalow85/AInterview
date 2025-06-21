@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0`r
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,56 +15,56 @@
  */
 
 import { create } from "zustand";
-import { ChatMessage } from "./store-chat";
-import { getCurrentUserSettingsAsync } from "./store-settings";
+import { ResponseCard } from "../types/response-card";
 
-interface StoreChatState {
-  maxLogs: number;
-  messages: ChatMessage[];
-  addMessage: (chatMessage: ChatMessage) => void;
-  clearMessages: () => void;
-  fetchMessages: () => Promise<void>;
+interface StoreCardState {
+  maxCards: number;
+  cards: ResponseCard[];
+  addCard: (card: ResponseCard) => void;
+  clearCards: () => Promise<void>;
+  fetchCards: (userId: string) => Promise<void>;
   loading: boolean;
+  updateCardInStore: (id: string) => void;
 }
 
-export const useLoggerStore = create<StoreChatState>((set) => ({
-  maxLogs: 4,
-  messages: [],
+export const useCardStore = create<StoreCardState>((set) => ({
+  maxCards: 4,
+  cards: [],
   loading: true,
-  addMessage: (chatMessage) => {
+  addCard: (card) => {
     set((state) => {
-      const prevLog = state.messages.at(-1);
-      if (prevLog && prevLog.message === chatMessage.message) {
+      const prevLog = state.cards.at(-1);
+      if (prevLog && prevLog.data === card.data) {
         return {
-          messages: [
-            ...state.messages.slice(0, -1),
+          cards: [
+            ...state.cards.slice(0, -1),
             { ...prevLog },
           ],
         };
       }
       return {
-        messages: [
-          ...state.messages.slice(-(state.maxLogs - 1)),
-          { ...chatMessage, count: 1 },
+        cards: [
+          ...state.cards.slice(-(state.maxCards - 1)),
+          { ...card, count: 1 },
         ],
       };
     });
   },
-  fetchMessages: async () => {
+  fetchCards: async (sesionId) => {
     try {
-      const user = await getCurrentUserSettingsAsync();
-      const response = await fetch(`http://localhost:8080/api/chat/history/${user.activeSessionId}`); 
+      const response = await fetch(`http://localhost:8080/api/chat/card-history/${sesionId}`); 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data: ChatMessage[] = await response.json();
-      set({ messages: data, loading: false });
+      const data: ResponseCard[] = await response.json();
+      console.log(data)
+      set({ cards: data, loading: false });
     } catch (error) {
       console.error('Error fetching messages:', error);
       set({ loading: false });
     }
   },
-  clearMessages: async () => {
+  clearCards: async () => {
     try {
       const response = await fetch("http://localhost:8080/api/chat/history/clear", {
         method: "DELETE"
@@ -72,11 +72,15 @@ export const useLoggerStore = create<StoreChatState>((set) => ({
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      set({ messages: [], loading: false });
+      set({ cards: [], loading: false });
     } catch (error) {
       console.error('Error fetching messages:', error);
       set({ loading: false });
     }
   },
-  setMaxLogs: (n: number) => set({ maxLogs: n }),
+  updateCardInStore: (id: string) =>
+    set((state) => ({
+      cards: state.cards.map((card) => (card.id === id ? { ...card, expanded: !card.expanded } : card)),
+  })),
 }));
+

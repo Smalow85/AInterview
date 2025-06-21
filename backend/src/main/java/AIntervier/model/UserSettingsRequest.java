@@ -6,6 +6,7 @@ public class UserSettingsRequest {
     private String lastName;
     private String systemInstruction;
     private String language;
+    private String activeSessionId;
 
     public String getFirstName() {
         return firstName;
@@ -37,5 +38,13 @@ public class UserSettingsRequest {
 
     public void setLanguage(String language) {
         this.language = language;
+    }
+
+    public String getActiveSessionId() {
+        return activeSessionId;
+    }
+
+    public void setActiveSessionId(String activeSessionId) {
+        this.activeSessionId = activeSessionId;
     }
 }

@@ -1,42 +1,33 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useLiveAPIContext } from "../../contexts/LiveAPIContext";
 import Logger from "../logger/Logger";
 import "./side-panel.scss";
 import { useLoggerStore } from "../../lib/store-logger";
 import { v4 as uuidv4 } from 'uuid';
+import { useSettingsStore } from "../../lib/store-settings";
+import { getCurrentUserSettingsAsync } from "../../lib/store-settings";
 
 export default function SidePanel() {
   const { client } = useLiveAPIContext();
-  const [sessionId, setSessionId] = useState<string | null>(null);
   const loggerRef = useRef<HTMLDivElement>(null);
   const loggerLastHeightRef = useRef<number>(-1);
   const { messages, addMessage, clearMessages } = useLoggerStore();
-
-  useEffect(() => {
-    const storedSessionId = localStorage.getItem('sessionId');
-    if (storedSessionId) {
-      setSessionId(storedSessionId);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (sessionId) {
-      localStorage.setItem('sessionId', sessionId);
-    } else {
-      localStorage.removeItem('sessionId');
-    }
-  }, [sessionId]);
+  const { settings, persistUpdates } = useSettingsStore();
 
   const handleStartConversation = async () => {
     const newSessionId = uuidv4();
-    setSessionId(newSessionId);
+    persistUpdates({
+      ...settings,
+      activeSessionId: newSessionId,
+    });
     console.log("Conversation started with session ID:", newSessionId);
   };
 
   const handleEndConversation = async () => {
-    if (sessionId) {
+    const user = await getCurrentUserSettingsAsync()
+    if (user.activeSessionId) {
       try {
-        const response = await fetch(`/analyze?sessionId=${sessionId}`, {
+        const response = await fetch(`/analyze?sessionId=${user.activeSessionId}`, {
           method: 'POST',
         });
         if (!response.ok) {
@@ -47,7 +38,6 @@ export default function SidePanel() {
       } catch (error) {
         console.error("Error analyzing conversation:", error);
       }
-      setSessionId(null);
     } else {
       console.log("No active conversation to end.");
     }
@@ -90,7 +80,7 @@ export default function SidePanel() {
         <button className="clear-button" onClick={handleClearMessages}>
           Clear Messages
         </button>
-            {sessionId && (
+            {settings.activeSessionId && (
           <button className="end-conversation-button" onClick={handleEndConversation}>
             End Conversation
           </button>

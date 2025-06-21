@@ -2,8 +2,7 @@ import {
   ChangeEvent,
   FormEventHandler,
   useCallback,
-  useState,
-  useEffect
+  useState
 } from "react";
 import "./settings-dialog.scss";
 import { useLiveAPIContext } from "../../contexts/LiveAPIContext";
@@ -24,7 +23,7 @@ export default function SettingsDialog() {
   const [open, setOpen] = useState(false);
   const editableFields: (keyof EditableUserSettings)[] = ['firstName', 'lastName', 'email', 'systemInstruction'];
   const { config, setConfig } = useLiveAPIContext();
-  const { settings, updateSettings, fetchSettings } = useSettingsStore();
+  const { settings, updateSettingsState, updateSettings } = useSettingsStore();
 
   const handleSettingChange: FormEventHandler<HTMLInputElement> = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
@@ -48,7 +47,7 @@ export default function SettingsDialog() {
       }
       const data: UserSettings = await response.json();
       setConfig({ ...config, systemInstruction: data.systemInstruction });
-      updateSettings(data)
+      updateSettingsState(data)
       setOpen(false);
     } catch (error: any) {
       console.error("Error saving settings:", error);
@@ -77,6 +76,7 @@ export default function SettingsDialog() {
               <div key={key} className="setting-row">
                 <label htmlFor={key}>{fieldLabels[key as keyof typeof fieldLabels]}:</label>
                 <input
+                  key={key}
                   className="system-small"
                   type="text"
                   id={key}

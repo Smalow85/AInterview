@@ -7,6 +7,9 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/settings")
@@ -33,11 +36,23 @@ public class UserSettingController {
         settings.setLastName(request.getLastName());
         settings.setSystemInstruction(request.getSystemInstruction());
         settings.setLanguage(request.getLanguage());
+        if (sessionIdUpdated(settings.getActiveSessionId(), request.getActiveSessionId())) {
+            List<String> previousSessions = settings.getPastSessionIds() != null ? settings.getPastSessionIds() : new ArrayList<>();
+            previousSessions.add(settings.getActiveSessionId());
+            settings.setPastSessionIds(previousSessions);
+        }
+        settings.setActiveSessionId(request.getActiveSessionId());
+
         UserSettings updated = repository.save(settings);
+
         return updated;
     }
 
     private UserSettings getDefaultUser() {
         return repository.findById(1L).orElseThrow(EntityNotFoundException::new);
+    }
+
+    private boolean sessionIdUpdated(String newSessionId, String prevSessionId) {
+        return !newSessionId.equals(prevSessionId);
     }
 }
