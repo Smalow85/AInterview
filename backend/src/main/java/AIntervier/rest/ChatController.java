@@ -6,7 +6,9 @@ import AIntervier.model.ChatResponse;
 import AIntervier.model.ResponseCard;
 import AIntervier.repository.ChatMessageRepository;
 import AIntervier.repository.ResponseCardRepository;
+import AIntervier.service.EnhancedGeminiService;
 import AIntervier.service.GeminiService;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,9 +32,23 @@ public class ChatController {
     @Autowired
     private ResponseCardRepository cardRepository;
 
+    @Autowired
+    private EnhancedGeminiService enhancedGeminiService;
+
     @PostMapping("/ask")
     public ResponseEntity<ResponseCard> sendMessage(@RequestBody ChatRequest request) {
         Map<String, Object> botReply = geminiService.askGemini(request.getMessage(), request.getSender());
+        return getResponseCardResponseEntity(request, botReply);
+    }
+
+    @PostMapping("/ask-with-context")
+    public ResponseEntity<ResponseCard> sendMessageWithContext(@RequestBody ChatRequest request) {
+        Map<String, Object> botReply = enhancedGeminiService.askGeminiWithEmbeddings(request.getMessage());
+        return getResponseCardResponseEntity(request, botReply);
+    }
+
+    @NotNull
+    private ResponseEntity<ResponseCard> getResponseCardResponseEntity(ChatRequest request, Map<String, Object> botReply) {
         if (!botReply.isEmpty() ) {
             ResponseCard card = new ResponseCard();
             card.setData((String) botReply.get("data"));

@@ -2,7 +2,7 @@ import { GenAILiveClient } from "./genai-live-client";
 import { LiveClientOptions } from "../types";
 import { ChatMessage } from "../types/chat-message";
 import { ResponseCard } from "../types/response-card";
-import { v4 as uuidv4 } from 'uuid'; // Import from uuid library
+import { v4 as uuidv4 } from 'uuid';
 import { getCurrentUserSettingsAsync } from "./store-settings";
 
 export class EnhancedGenAILiveClient extends GenAILiveClient {
@@ -54,20 +54,23 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
             this.emit('messageAdded', message);
                 const res = await this.saveCardToDatabase({ sessionId: userSettings.activeSessionId, sender: 'bot', message: this.accumulatedText });
                 if (res?.status != 204) {
+                    console.log(res)
                 const data: ResponseCard = res?.data;
-                const card: ResponseCard = {
-                    sender: data.sender,
-                    header: data.header,
-                    expanded: data.expanded,
-                    data: data.data,
-                    tags: data.tags,
-                    codeExample: data.codeExample,
-                    summary: data.summary,
-                    error: data.error,
-                    id: uuidv4()
+                if (data) {
+                    const card: ResponseCard = {
+                        sender: data.sender,
+                        header: data.header,
+                        expanded: data.expanded,
+                        data: data.data,
+                        tags: data.tags,
+                        codeExample: data.codeExample,
+                        summary: data.summary,
+                        error: data.error,
+                        id: uuidv4()
+                    }
+                    console.log('Card', card)
+                    this.emit('cardAdded', card);
                 }
-                console.log('Card', card)
-                this.emit('cardAdded', card);
             }
             this.accumulatedText = '';
         } else {

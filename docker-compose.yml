@@ -15,18 +15,23 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   qdrant:
-    image: qdrant/qdrant
-    container_name: interview-qdrant
+    image: qdrant/qdrant:latest
     ports:
-      - "6334:6333"
+      - "6333:6333"  # HTTP API
+      - "6334:6334"  # gRPC API
     volumes:
       - qdrant_storage:/qdrant/storage
 
-  embedding-service:
+  app:
     build:
       context: ./embedding-service
     ports:
       - "8000:8000"
+    depends_on:
+      - qdrant
+    environment:
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6334
 
 volumes:
   postgres_data:

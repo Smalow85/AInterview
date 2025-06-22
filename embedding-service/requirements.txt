@@ -1,3 +1,8 @@
 fastapi
-uvicorn
+uvicorn[standard]
+qdrant-client[grpc]
 sentence-transformers
+nltk
+python-multipart
+PyMuPDF
+python-docx

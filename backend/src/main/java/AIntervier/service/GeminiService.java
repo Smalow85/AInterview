@@ -1,9 +1,7 @@
 package AIntervier.service;
 
-import AIntervier.embedding.RemoteEmbeddingService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -28,14 +26,7 @@ public class GeminiService {
     @Value("${gemini.endpoint}")
     private String endpoint;
 
-    @Autowired
-    private QdrantService qdrantService;
-
-    @Autowired
-    private RemoteEmbeddingService embeddingService;
-
     private final RestTemplate restTemplate = new RestTemplate();
-    private final ObjectMapper objectMapper = new ObjectMapper();
     private final List<Map<String, String>> contextBuffer = new ArrayList<>();
     private final int contextThreshold = 3;
     private final AtomicBoolean requestInProgress = new AtomicBoolean(false);
@@ -188,8 +179,7 @@ public class GeminiService {
     }
 
     public String askGeminiWithContext(String prompt) {
-        float[] queryVector = embeddingService.embed(prompt);
-        List<String> contextChunks = qdrantService.search("context", queryVector, 5);
+        List<String> contextChunks = List.of();
 
         StringBuilder finalPrompt = new StringBuilder("Context:\n");
         for (String c : contextChunks) {
@@ -199,4 +189,5 @@ public class GeminiService {
 
         return askGemini(finalPrompt.toString(), "user").toString();
     }
+
 }
