@@ -10,7 +10,7 @@ import java.util.Set;
 @Service
 public class InterviewQuestionService {
 
-    public List<String> generateQuestions(String sessionId, String jobTitle, String requiredExperience, String resumeContent,List<String> keySkills) {
+    public List<String> generateQuestions(String jobTitle, String requiredExperience, String resumeContent,List<String> keySkills) {
         List<String> extractedSkills = new ArrayList<>();
         if (resumeContent != null) {
             extractedSkills = extractSkillsFromResume(resumeContent); //Implementation for extracting from resume content

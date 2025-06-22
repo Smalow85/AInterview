@@ -25,11 +25,12 @@ public class InterviewQuestionController {
 
     @PostMapping()
     public ResponseEntity<List<InterviewQuestion>> getInterviewQuestion(@RequestBody InterviewQestionRequest request) {
-        List<String> questions =  interviewQuestionService.generateQuestions(request.getSessionId(),
+        List<String> questions =  interviewQuestionService.generateQuestions(
                 request.getJobTitle(),
                 request.getRequiredExperience(),
                 request.getResumeContent(),
-                request.getKeySkills());
+                request.getKeySkills()
+        );
         List<InterviewQuestion> generatedQuestions = new ArrayList<>();
         if (!questions.isEmpty()) {
             generatedQuestions = questions.stream()

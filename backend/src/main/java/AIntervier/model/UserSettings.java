@@ -1,13 +1,9 @@
 package AIntervier.model;
 
-import AIntervier.utils.MapToJsonConverter;
-import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
-import org.hibernate.annotations.Type;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 @Entity
 @Table(name = "user_settings")
