@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLiveAPIContext } from "../../contexts/LiveAPIContext";
 import Logger from "../logger/Logger";
 import "./side-panel.scss";
@@ -6,6 +6,8 @@ import { useLoggerStore } from "../../lib/store-logger";
 import { v4 as uuidv4 } from 'uuid';
 import { useSettingsStore } from "../../lib/store-settings";
 import { getCurrentUserSettingsAsync } from "../../lib/store-settings";
+import InterviewQuestionGenerator from "../interview-question-generator/InterviewQuestionGenerator";
+import Modal from "../main-panel/Modal";
 
 export default function SidePanel() {
   const { client } = useLiveAPIContext();
@@ -13,6 +15,8 @@ export default function SidePanel() {
   const loggerLastHeightRef = useRef<number>(-1);
   const { messages, addMessage, clearMessages } = useLoggerStore();
   const { settings, persistUpdates } = useSettingsStore();
+  const [showGenerator, setShowGenerator] = useState(false);
+
 
   const handleStartConversation = async () => {
     const newSessionId = uuidv4();
@@ -21,6 +25,7 @@ export default function SidePanel() {
       activeSessionId: newSessionId,
     });
     console.log("Conversation started with session ID:", newSessionId);
+    setShowGenerator(true);
   };
 
   const handleEndConversation = async () => {
@@ -87,9 +92,14 @@ export default function SidePanel() {
             )}
           </>
         ) : (
+          <>
           <button className="start-conversation-button" onClick={handleStartConversation}>
             Start Conversation
           </button>
+          <Modal isOpen={showGenerator} onClose={() => setShowGenerator(false) }>
+            <InterviewQuestionGenerator />
+          </Modal>
+          </>
         )}
       </div>
     </div>

@@ -1,4 +1,4 @@
-package AIntervier.model;
+package AIntervier.rest.data;
 
 public class ChatResponse {
     private String reply;

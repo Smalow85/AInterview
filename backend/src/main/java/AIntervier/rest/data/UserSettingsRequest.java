@@ -1,4 +1,4 @@
-package AIntervier.model;
+package AIntervier.rest.data;
 
 public class UserSettingsRequest {
 

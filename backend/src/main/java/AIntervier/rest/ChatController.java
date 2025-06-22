@@ -1,8 +1,8 @@
 package AIntervier.rest;
 
 import AIntervier.model.ChatMessage;
-import AIntervier.model.ChatRequest;
-import AIntervier.model.ChatResponse;
+import AIntervier.rest.data.ChatRequest;
+import AIntervier.rest.data.ChatResponse;
 import AIntervier.model.ResponseCard;
 import AIntervier.repository.ChatMessageRepository;
 import AIntervier.repository.ResponseCardRepository;

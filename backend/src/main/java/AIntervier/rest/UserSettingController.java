@@ -1,7 +1,7 @@
 package AIntervier.rest;
 
 import AIntervier.model.UserSettings;
-import AIntervier.model.UserSettingsRequest;
+import AIntervier.rest.data.UserSettingsRequest;
 import AIntervier.repository.UserSettingsRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
