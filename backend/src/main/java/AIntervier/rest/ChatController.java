@@ -37,7 +37,7 @@ public class ChatController {
 
     @PostMapping("/ask")
     public ResponseEntity<ResponseCard> sendMessage(@RequestBody ChatRequest request) {
-        Map<String, Object> botReply = geminiService.askGemini(request.getMessage(), request.getSender());
+        Map<String, Object> botReply = geminiService.askGemini(request.getMessage(), request.getJobTitle());
         return getResponseCardResponseEntity(request, botReply);
     }
 
@@ -49,7 +49,7 @@ public class ChatController {
 
     @NotNull
     private ResponseEntity<ResponseCard> getResponseCardResponseEntity(ChatRequest request, Map<String, Object> botReply) {
-        if (!botReply.isEmpty() ) {
+        if ((boolean) botReply.get("generateCard")) {
             ResponseCard card = new ResponseCard();
             card.setData((String) botReply.get("data"));
             card.setSessionId(request.getSessionId());
@@ -57,7 +57,7 @@ public class ChatController {
             card.setTags((List<String>) botReply.getOrDefault("tags", new ArrayList<>()));
             card.setSummary((String) botReply.get("summary"));
             card.setCreated(LocalDateTime.now());
-            card.setSender(request.getSender());
+            card.setSender(request.getJobTitle());
             cardRepository.save(card);
             return ResponseEntity.ok(card);
         } else {
@@ -70,7 +70,7 @@ public class ChatController {
         System.out.println(request);
         ChatMessage message = new ChatMessage();
         message.setSessionId(request.getSessionId());
-        message.setSender(request.getSender());
+        message.setSender(request.getJobTitle());
         message.setMessage(request.getMessage());
         message.setCreated(LocalDateTime.now());
         repository.save(message);

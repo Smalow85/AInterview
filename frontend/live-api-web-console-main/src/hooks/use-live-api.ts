@@ -21,13 +21,14 @@ import { LiveConnectConfig } from "@google/genai";
 import { AudioStreamer } from "../lib/audio-streamer";
 import { audioContext } from "../lib/utils";
 import VolMeterWorket from "../lib/worklets/vol-meter";
-import { useSettingsStore } from "../lib/store-settings"; 
+import { useSettingsStore } from "../lib/store-settings";
+import { PromptConstructor } from "../lib/promptConstructor";
 
 import {
   FunctionDeclaration,
   Type,
 } from "@google/genai";
-import { getCurrentUserSettingsAsync } from "../lib/store-settings";
+import { useInterviewQuestionsStore } from "../lib/store-interview-question";
 export type UseLiveAPIResults = {
   client: EnhancedGenAILiveClient;
   setConfig: (config: LiveConnectConfig) => void;
@@ -40,9 +41,37 @@ export type UseLiveAPIResults = {
   volume: number;
 };
 
+const evaluate_answer_declaration: FunctionDeclaration = {
+  name: "evaluate_answer",
+  description: "Evaluate candidate's technical answer",
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      score: { type: Type.NUMBER, description: "Score from 1-10" }, // Changed to NUMBER for consistency, adjust as needed
+      keywords_found: { type: Type.ARRAY, items: { type: Type.STRING } },
+      needs_followup: { type: Type.BOOLEAN },
+      next_action: { type: Type.STRING },
+    },
+    required: ["score", "needs_followup", "next_action"],
+  },
+};
+
+const advance_interview_declaration: FunctionDeclaration = {
+  name: "advance_interview",
+  description: "Move to next question or phase",
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      action: { type: Type.STRING, enum: ["next_question", "next_phase", "complete"] },
+      reason: { type: Type.STRING },
+    },
+    required: ["action"],
+  },
+};
+
 const summarize_declaration: FunctionDeclaration = {
   name: "summarize",
-  description: "Summaraze recent messages from chat history"
+  description: "Summarize recent messages from chat history"
 };
 
 const get_context_declaration: FunctionDeclaration = {
@@ -66,18 +95,38 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
   const [model, setModel] = useState<string>("models/gemini-2.0-flash-exp");
   const [config, setConfig] = useState<LiveConnectConfig>(
     {
-      systemInstruction: 'You are experienced java developer, who act as an interviewer on job interview for java senior developer role, answer in Russian',
+      systemInstruction: '',
       inputAudioTranscription: { enabled: true },
       outputAudioTranscription: { enabled: true },
       tools: [
         { googleSearch: {} },
-        { functionDeclarations: [summarize_declaration, get_context_declaration] },
+        { functionDeclarations: [evaluate_answer_declaration, advance_interview_declaration, summarize_declaration, get_context_declaration] },
       ],
     }
   );
   const [connected, setConnected] = useState(false);
   const [volume, setVolume] = useState(0);
-  const { settings } = useSettingsStore();
+  const { settings, settingsLoading} = useSettingsStore();
+  const { phases, position, phasesLoading  } = useInterviewQuestionsStore()
+  const promptConstructor = new PromptConstructor();
+
+  const interviewBot = useMemo(() => client.interviewBot, [client]);
+
+  async function setupLiveAPIConfig() {
+    console.log(phases)
+    console.log(settings)
+    interviewBot._initializeInterviewStructure(phases, position)
+    const initialSystemPrompt = promptConstructor.constructInitialSystemPrompt(interviewBot, phases);
+    setConfig({
+          systemInstruction: initialSystemPrompt,
+          inputAudioTranscription: { enabled: true },
+          outputAudioTranscription: { enabled: true },
+          tools: [
+            { googleSearch: {} },
+            { functionDeclarations: [summarize_declaration, get_context_declaration] },
+          ],
+    });
+  }
 
   useEffect(() => {
     const setupAudio = async () => {
@@ -87,35 +136,35 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
         await audioStreamerRef.current.addWorklet<any>("vumeter-out", VolMeterWorket, (ev: any) => {
             setVolume(ev.data.volume);
           });
-    }
+      }
     };
-
     setupAudio();
   }, []);
 
   useEffect(() => {
-    const setupLiveAPI = async () => {
-      try {
-      setConfig({
-          systemInstruction: settings.systemInstruction || config.systemInstruction,
-        inputAudioTranscription: { enabled: true },
-        outputAudioTranscription: { enabled: true },
-        tools: [
-          { googleSearch: {} },
-          { functionDeclarations: [summarize_declaration, get_context_declaration] },
-        ],
-      });
-      console.log(config)
-      } catch (error) {
-        console.error("Error fetching user settings:", error);
+    const connectToLiveAPI = async () => {
+      if (!settingsLoading && !phasesLoading && settings.activeSessionId) {  //Check if stores and session are ready
+        try {
+          await setupLiveAPIConfig();
+          await connect();
+          setConnected(true);
+          console.log("connected, config is:", config)
+        } catch (error) {
+          console.error("Error connecting to Live API:", error);
+        }
       }
     };
-    setupLiveAPI();
-  }, [settings]);
+    connectToLiveAPI();
+  }, [settingsLoading, phasesLoading, settings.activeSessionId]);
 
   useEffect(() => {
     const onOpen = () => {
       setConnected(true);
+      // Send initial greeting/question once connected
+      const currentQuestion = client.interviewBot.get_current_question();
+      client.send({
+        text: `Начни интервью с приветствия и первого вопроса: ${currentQuestion ? currentQuestion.text : ''}`
+      }, true);
     };
 
     const onClose = () => {

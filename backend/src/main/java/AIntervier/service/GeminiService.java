@@ -1,5 +1,8 @@
 package AIntervier.service;
 
+import AIntervier.model.InterviewPlan;
+import AIntervier.rest.data.InterviewQestionRequest;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
@@ -7,6 +10,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,14 +36,14 @@ public class GeminiService {
     private final AtomicBoolean requestInProgress = new AtomicBoolean(false);
     private final ExecutorService executor = Executors.newFixedThreadPool(5);
 
-    public Map<String, Object> askGemini(String prompt, String role) {
+    public Map<String, Object> askGemini(String prompt, String jobTitle) {
         synchronized (contextBuffer) {
-            contextBuffer.add(Map.of("role", role, "text", prompt));
+            contextBuffer.add(Map.of("text", prompt));
 
             if (contextBuffer.size() >= contextThreshold && !requestInProgress.get()) {
                 CompletableFuture<Map<String, Object>> future = CompletableFuture.supplyAsync(() -> {
                     requestInProgress.set(true);
-                    Map<String, Object> response = sendGeminiRequest();
+                    Map<String, Object> response = sendGeminiRequest(jobTitle, prompt);
                     contextBuffer.clear();
                     requestInProgress.set(false);
                     return response;
@@ -55,19 +59,29 @@ public class GeminiService {
         }
     }
 
-    private Map<String, Object> sendGeminiRequest() {
+    private Map<String, Object> sendGeminiRequest(String jobTitle, String promptText) {
         try {
             // Prepare the prompt with context
             StringBuilder promptBuilder = new StringBuilder();
+            promptBuilder.append("System Instruction:\n");
+            promptBuilder.append("You are an AI assistant helping conduct technical interviews.  Analyze the conversation history and user input to determine if a supplemental card is needed. If so, generate a JSON response containing the card; otherwise, respond with an empty JSON object (`{}`).\n\n");
+
             promptBuilder.append("Context:\n");
+            promptBuilder.append("Conversation History:\n");
             for (Map<String, String> turn : contextBuffer) {
                 promptBuilder.append(turn.get("text")).append("\n");
             }
-            promptBuilder.append("\nRespond strictly in valid JSON format using this structure. ");
-            promptBuilder.append("Always fill in the following fields: \"tags\", \"data\", \"header\", and \"summary\". ");
-            promptBuilder.append("The field \"codeExamples\" is optional and should only be included if relevant.\n");
+            promptBuilder.append("Current User Input:\n").append(promptText).append("\n");
+            promptBuilder.append("Interview Position:\n").append(jobTitle).append("\n");
 
+            promptBuilder.append("Card Generation Criteria:\n");
+            promptBuilder.append("Generate a card ONLY if the user input needs additional information relevant to the interview topic and key skills.  The card should provide concise supplemental information to help the interviewer assess the candidate.\n\n");
+
+            promptBuilder.append("JSON Structure:\n");
+            promptBuilder.append("```json\n");
             promptBuilder.append("{\n");
+            promptBuilder.append("  \"generateCard\": true, // Set to false if no card is needed\n");
+            promptBuilder.append("  \"card\": {\n");
             promptBuilder.append("  \"tags\": [\"...\"],\n");
             promptBuilder.append("  \"data\": \"...\",\n");
             promptBuilder.append("  \"header\": \"...\",\n");
@@ -78,7 +92,10 @@ public class GeminiService {
             promptBuilder.append("      \"code\": \"...\"\n");
             promptBuilder.append("    }\n");
             promptBuilder.append("  ]\n");
+            promptBuilder.append("  }\n");
             promptBuilder.append("}\n");
+            promptBuilder.append("```\n");
+
 
 
             String prompt = promptBuilder.toString();
@@ -135,44 +152,37 @@ public class GeminiService {
 
             String cleanedJson = generatedText.substring(jsonStart, jsonEnd + 1);
 
+            Map<String, Object> parsedResponse = new HashMap<>();
 
-            // Attempt to parse generated JSON
-            JsonNode result = mapper.readTree(cleanedJson);
+            JsonNode responseJson = mapper.readTree(cleanedJson);
+            parsedResponse.put("generateCard", responseJson.get("generateCard").asBoolean());
 
-            List<String> tags = new ArrayList<>();
-            JsonNode tagsNode = result.path("tags");
-            if (tagsNode.isArray()) {
-                for (JsonNode tag : tagsNode) {
-                    tags.add(tag.asText());
-                }
-            }
+            if (responseJson.has("card")) {
+                Map<String, Object> cardData = new HashMap<>();
+                // Attempt to parse generated JSON
+                JsonNode cardNode = responseJson.get("card");
 
-            String data = result.path("data").asText("");
-            String header = result.path("header").asText("");
-            String summary = result.path("summary").asText("");
-
-            List<Map<String, String>> codeExamples = new ArrayList<>();
-            JsonNode codeExamplesNode = result.path("code examples");
-            if (codeExamplesNode.isArray()) {
-                for (JsonNode exampleNode : codeExamplesNode) {
-                    if (exampleNode.has("language") && exampleNode.has("code")) {
-                        codeExamples.add(Map.of(
-                                "language", exampleNode.get("language").asText(),
-                                "code", exampleNode.get("code").asText()
-                        ));
+                if (cardNode.has("tags")) {
+                    List<String> tags = new ArrayList<>();
+                    for(JsonNode tagNode : cardNode.get("tags")) {
+                        tags.add(tagNode.asText());
                     }
+                    cardData.put("tags", tags);
                 }
+
+                if (cardNode.has("data")) cardData.put("data", cardNode.get("data").asText());
+                if (cardNode.has("header")) cardData.put("header", cardNode.get("header").asText());
+                if (cardNode.has("summary")) cardData.put("summary", cardNode.get("summary").asText());
+                if(cardNode.has("codeExamples")) {
+                    List<Map<String, String>> codeExamples = new ArrayList<>();
+                    for(JsonNode exampleNode : cardNode.get("codeExamples")) {
+                        codeExamples.add(Map.of("language", exampleNode.get("language").asText(), "code", exampleNode.get("code").asText()));
+                    }
+                    cardData.put("codeExamples", codeExamples);
+                }
+                parsedResponse.put("card", cardData);
             }
-
-            Map<String, Object> validatedResponse = new HashMap<>();
-            validatedResponse.put("tags", tags);
-            validatedResponse.put("data", data);
-            validatedResponse.put("header", header);
-            validatedResponse.put("summary", summary);
-            validatedResponse.put("codeExamples", codeExamples);
-
-            return validatedResponse;
-
+            return parsedResponse;
         } catch (Exception e) {
             return Map.of("error", "Error from Gemini: " + e.getMessage());
         }
@@ -188,6 +198,97 @@ public class GeminiService {
         finalPrompt.append("\nQuestion: ").append(prompt);
 
         return askGemini(finalPrompt.toString(), "user").toString();
+    }
+
+    public InterviewPlan generateInterviewPlan(InterviewQestionRequest request) throws Exception {
+        String prompt = buildPrompt(request);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String, Object> messageContent = Map.of(
+                "contents", List.of(
+                        Map.of("parts", List.of(
+                                Map.of("text", prompt)
+                        ))
+                )
+        );
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(messageContent, headers);
+        String fullUrl = endpoint + "?key=" + apiKey;
+
+        ResponseEntity<String> response = restTemplate.postForEntity(fullUrl, entity, String.class);
+
+        // Parse Gemini response
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode root = mapper.readTree(response.getBody());
+        JsonNode candidates = root.path("candidates");
+
+        if (!candidates.isArray() || candidates.isEmpty()) {
+            throw new Exception("Error: Gemini returned no candidates");
+        }
+
+        JsonNode content = candidates.get(0).path("content");
+        JsonNode parts = content.path("parts");
+
+        if (!parts.isArray() || parts.isEmpty()) {
+            throw new Exception("Error: Gemini response is missing parts");
+        }
+
+        String generatedText = parts.get(0).path("text").asText();
+
+        int jsonStart = generatedText.indexOf('{');
+        int jsonEnd = generatedText.lastIndexOf('}');
+        if (jsonStart == -1 || jsonEnd == -1 || jsonEnd <= jsonStart) {
+            throw new Exception("Error: Gemini response does not contain valid JSON structure");
+        }
+
+        String cleanedJson = generatedText.substring(jsonStart, jsonEnd + 1);
+        //String json = parseGeneratedText(cleanedJson);
+        return mapper.readValue(cleanedJson, InterviewPlan.class);
+    }
+
+    private String buildPrompt(InterviewQestionRequest req) {
+        return String.format("""
+            Ты — AI-собеседователь. Сгенерируй JSON-структуру плана технического интервью для позиции "%s".
+            Учитывай ключевые навыки: %s.
+            Опыт кандидата: %s лет.
+
+            Ответ верни строго в JSON-формате, без закрывающих и открывающих кавычек, комментариев или пояснений. Структура:
+            {
+              "phases": [
+                {
+                  "name": "Название фазы",
+                  "questions": [
+                    {
+                      "text": "Вопрос текстом",
+                      "type": "Technical",
+                      "difficulty": "Medium",
+                      "expectedKeywords": ["ключ", "слова"],
+                      "evaluationCriteria": ["что оценивать"]
+                    }
+                  ]
+                }
+              ]
+            }
+            """,
+                req.getJobTitle(),
+                String.join(", ", req.getKeySkills()),
+                req.getRequiredExperience()
+        );
+    }
+
+    private String parseGeneratedText(String geminiResponse) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode root = mapper.readTree(geminiResponse);
+        return root
+                .path("candidates")
+                .get(0)
+                .path("content")
+                .path("parts")
+                .get(0)
+                .path("text")
+                .asText();
     }
 
 }

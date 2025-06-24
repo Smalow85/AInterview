@@ -71,6 +71,8 @@ export interface LiveClientEventTypes {
   messageAdded: (message: ChatMessage) => void;
   cardAdded: (card: ResponseCard) => void;
   settingsUpdated: (settings: UserSettings) => void;
+  userTextInput: (text: string) => void; // New event for user text transcription
+  interviewComplete: (report: any) => void; // New event for interview completion
 }
 
 /**

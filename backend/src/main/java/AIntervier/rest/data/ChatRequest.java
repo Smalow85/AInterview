@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 public class ChatRequest implements Serializable {
     private String sessionId;
-    private String sender;
+    private String jobTitle;
     private String message;
 
     public ChatRequest() {
@@ -31,12 +31,12 @@ public class ChatRequest implements Serializable {
         this.message = message;
     }
 
-    public String getSender() {
-        return sender;
+    public String getJobTitle() {
+        return jobTitle;
     }
 
-    public void setSender(String sender) {
-        this.sender = sender;
+    public void setJobTitle(String jobTitle) {
+        this.jobTitle = jobTitle;
     }
 }
 

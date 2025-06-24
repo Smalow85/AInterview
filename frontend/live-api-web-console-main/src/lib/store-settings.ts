@@ -23,7 +23,7 @@ interface SettingsState {
   updateSettings: (partialSettings: Partial<UserSettings>) => void; 
   persistUpdates: (settings: UserSettings) => void;
   fetchSettings: () => Promise<UserSettings | undefined>;
-
+  settingsLoading: boolean
 }
 
 const defaultUserSettings: UserSettings = {
@@ -41,6 +41,7 @@ export const getCurrentUserSettingsAsync = async () => {
 
 export const useSettingsStore = create<SettingsState>((set) => ({
   settings: defaultUserSettings,
+  settingsLoading: true,
   cards: [],
   updateSettingsState: (settings) => {
     set((state) => ({
@@ -75,7 +76,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data: UserSettings = await response.json();
-      set({settings: data});
+      set({settings: data, settingsLoading: false});
       return data
     } catch (error) {
       console.error('Error fetching messages:', error);

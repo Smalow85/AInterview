@@ -29,13 +29,10 @@ public class EnhancedGeminiService {
     private List<Map<String, String>> contextBuffer = new ArrayList<>();
 
     public EnhancedGeminiService(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
+        this.restTemplate = new RestTemplate();
         this.objectMapper = new ObjectMapper();
     }
 
-    /**
-     * Получает релевантные чанки из сервиса эмбеддингов
-     */
     private List<String> getRelevantContext(String query, int maxChunks, double minScore) {
         try {
             String searchUrl = embeddingServiceUrl + "/search";

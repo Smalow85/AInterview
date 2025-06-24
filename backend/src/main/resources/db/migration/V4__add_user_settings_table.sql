@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS user_settings (
     last_name TEXT,
     email TEXT,
     active_session_id VARCHAR(255) NOT NULL,
-    past_session_ids TEXT[],
+    past_session_ids jsonb,
     system_instruction TEXT,
     language TEXT,
     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP

@@ -1,4 +1,4 @@
-CREATE TABLE interview_questions (
+CREATE TABLE if not exists interview_questions (
     id SERIAL PRIMARY KEY,
     session_id VARCHAR(255) NOT NULL,
     question TEXT NOT NULL,
