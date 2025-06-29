@@ -10,6 +10,9 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
     private accumulatedText: string = "";
     private accumulatedInputText: string = "";
     public interviewBot: TechnicalInterviewBot;
+    private followUpCount: number = 0;
+    private readonly maxFollowUps: number = 3;
+    private lastUserAnswer: string = "";
 
     constructor(options: LiveClientOptions) {
         super(options);
@@ -21,6 +24,11 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
 
     protected async onmessage(message: any) {
         await super.onmessage(message);
+        if (message.toolCall) {
+            this.handleToolCall(message.toolCall);
+            return;
+        }
+
         if (message.serverContent) {
             if ("inputTranscription" in message.serverContent) {
                 this.accumulatedInputText += message.serverContent.inputTranscription.text;
@@ -29,64 +37,312 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
                 this.accumulatedText += message.serverContent.outputTranscription.text;
             }
             if ("turnComplete" in message.serverContent && message.serverContent.turnComplete) {
-                this.handleTurnComplete();
+                await this.handleTurnComplete();
             }
         }
     }
 
+
+
     private async handleTurnComplete() {
         const userSettings = await getCurrentUserSettingsAsync();
+
         if (this.accumulatedInputText) {
-            await this.saveMessageToDatabase({ sessionId: userSettings.activeSessionId, sender: 'user', message: this.accumulatedInputText });
-            const message: ChatMessage = {
-                sender: 'user',
-                message: this.accumulatedInputText,
-                id: uuidv4()
-        }
-            this.emit('messageAdded', message);
-            const analysisResult = this.interviewBot.process_answer(this.accumulatedInputText);
-            if (analysisResult.status === 'interview_complete') {
-                await this.finalizeInterview();
-                return;
-            }
-            await this.sendAnalysisToGemini(analysisResult);
+            await this.saveUserMessage(userSettings.activeSessionId, this.accumulatedInputText);
+            this.lastUserAnswer = this.accumulatedInputText;
             this.accumulatedInputText = '';
-        } else {
-            console.warn("No input text to save for this turn.");
         }
+
+        // Сохраняем ответ бота
         if (this.accumulatedText) {
-            await this.saveMessageToDatabase({ sessionId: userSettings.activeSessionId, sender: 'bot', message: this.accumulatedText });
-            const message: ChatMessage = {
-                sender: 'bot',
-                message: this.accumulatedText,
-                id: uuidv4()
-            }
-            this.emit('messageAdded', message);
-                const res = await this.saveCardToDatabase({ sessionId: userSettings.activeSessionId, sender: 'bot', message: this.accumulatedText });
-                if (res?.status != 204) {
-                    console.log(res)
-                const data: ResponseCard = res?.data;
-                if (data) {
-                    const card: ResponseCard = {
-                        sender: data.sender,
-                        header: data.header,
-                        expanded: data.expanded,
-                        data: data.data,
-                        tags: data.tags,
-                        codeExample: data.codeExample,
-                        summary: data.summary,
-                        error: data.error,
-                        id: uuidv4()
-                    }
-                    console.log('Card', card)
-                    this.emit('cardAdded', card);
-                }
-            }
+            await this.saveBotMessage(userSettings.activeSessionId, this.accumulatedText);
             this.accumulatedText = '';
-        } else {
-            console.warn("No output text to save for this turn.");
         }
+
         this.emit("turncomplete");
+    }
+
+    private async handleToolCall(toolCall: any) {
+        console.log("Received tool call:", toolCall);
+
+        // Check if toolCall is an array
+        if (Array.isArray(toolCall)) {
+            // Iterate through the array and process each tool call
+            for (const call of toolCall) {
+                console.log("inside", call);
+                await this.processToolCall(call);
+            }
+        } else if (toolCall && toolCall.functionCalls && Array.isArray(toolCall.functionCalls)) {
+            // Check if toolCall has functionCalls property and it's an array
+            for (const call of toolCall.functionCalls) {
+                console.log("inside functionCalls", call);
+                await this.processToolCall(call);
+            }
+        } else {
+            console.log("outside");
+            // If it's not an array, process it as a single tool call
+            await this.processToolCall(toolCall);
+        }
+    }
+    
+    private async processToolCall(toolCall: any) {
+        console.log("Received tool call:", toolCall);
+
+        console.log(toolCall)
+
+        const functionName = toolCall.functionCall?.name || toolCall.name;
+        const args = toolCall.functionCall?.args || toolCall.args || {};
+        const toolCallId = toolCall.id;
+
+        let functionResponse: any = {
+            id: toolCallId,
+            name: functionName,
+            response: { status: "success" }
+        };
+
+        try {
+            switch (functionName) {
+                case "evaluate_answer":
+                    functionResponse.response = await this.handleEvaluateAnswer(args);
+                    break;
+
+                case "advance_interview":
+                    functionResponse.response = await this.handleAdvanceInterview(args);
+                    break;
+
+                case "ask_question":
+                    functionResponse.response = await this.handleAskQuestion(args);
+                    break;
+
+                case "provide_feedback":
+                    functionResponse.response = await this.handleProvideFeedback(args);
+                    break;
+
+                default:
+                    console.warn(`Unknown function call: ${functionName}`);
+                    functionResponse.response = {
+                        status: "error",
+                        error: `Unknown function: ${functionName}`
+                    };
+            }
+        } catch (error) {
+            console.error(`Error handling tool call ${functionName}:`, error);
+            functionResponse.response = {
+                status: "error",
+                error: error
+            };
+        }
+
+        this.sendToolResponse({ functionResponses: [functionResponse] });
+    }
+
+    private async handleEvaluateAnswer(args: any) {
+        if (!this.lastUserAnswer) {
+            return { status: "error", error: "No user answer to evaluate" };
+        }
+
+        // Сохраняем оценку в нашем интервью боте
+        this.saveEvaluation({
+            score: args.score,
+            keywords_found: args.keywords_found || [],
+            needs_followup: args.needs_followup,
+            next_action: args.next_action
+        });
+
+        // Обновляем счетчик follow-up вопросов
+        if (args.next_action === "ask_followup") {
+            this.followUpCount++;
+        } else {
+            this.followUpCount = 0;
+        }
+
+        const currentQuestion = this.interviewBot.get_current_question();
+
+        return {
+            status: "success",
+            evaluation: {
+                score: args.score,
+                completeness: args.completeness,
+                keywords_found: args.keywords_found || [],
+                needs_followup: args.needs_followup,
+                followup_count: this.followUpCount,
+                max_followups_reached: this.followUpCount >= this.maxFollowUps,
+                current_question: currentQuestion?.text || "No current question",
+                suggested_action: args.next_action
+            }
+        };
+    }
+
+    private async handleAdvanceInterview(args: any) {
+        const action = args.action;
+
+        switch (action) {
+            case "next_question":
+                this.interviewBot.advance_to_next_question();
+                const nextQuestion = this.interviewBot.get_current_question();
+
+                if (nextQuestion) {
+                    await this.updateSystemInstructionForGemini(nextQuestion);
+                    return {
+                        status: "success",
+                        action: "next_question",
+                        question: {
+                            text: nextQuestion.text,
+                            keywords: nextQuestion.expectedKeywords,
+                            criteria: nextQuestion.evaluationCriteria
+                        },
+                        phase: this.interviewBot.current_phase
+                    };
+                } else {
+                    return {
+                        status: "success",
+                        action: "interview_complete",
+                        message: "No more questions available"
+                    };
+                }
+
+            case "next_phase":
+                this.interviewBot.advance_to_next_question();
+                const phaseQuestion = this.interviewBot.get_current_question();
+
+                if (phaseQuestion) {
+                    await this.updateSystemInstructionForGemini(phaseQuestion);
+                    return {
+                        status: "success",
+                        action: "next_phase",
+                        new_phase: this.interviewBot.current_phase,
+                        question: {
+                            text: phaseQuestion.text,
+                            keywords: phaseQuestion.expectedKeywords,
+                            criteria: phaseQuestion.evaluationCriteria
+                        }
+                    };
+                } else {
+                    return {
+                        status: "success",
+                        action: "interview_complete",
+                        message: "No more phases available"
+                    };
+                }
+
+            case "complete":
+                await this.finalizeInterview();
+                return {
+                    status: "success",
+                    action: "interview_complete",
+                    message: "Interview completed successfully"
+                };
+
+            default:
+                return {
+                    status: "error",
+                    error: `Unknown action: ${action}`
+                };
+        }
+    }
+
+    private async handleAskQuestion(args: any) {
+        const userSettings = await getCurrentUserSettingsAsync();
+        const questionText = args.question_text;
+        const additionalContext = args.additional_context || "";
+
+        // Сохраняем вопрос как карточку
+        await this.saveQuestionCard(userSettings.activeSessionId, questionText);
+
+        // Помечаем, что вопрос был задан
+        this.interviewBot.questionSent = true;
+
+        return {
+            status: "success",
+            question_asked: questionText,
+            additional_context: additionalContext,
+            waiting_for_answer: true
+        };
+    }
+
+    private async handleProvideFeedback(args: any) {
+        const feedbackType = args.feedback_type;
+        const message = args.message;
+
+        // Логируем feedback для аналитики
+        console.log(`Feedback [${feedbackType}]: ${message}`);
+
+        return {
+            status: "success",
+            feedback_type: feedbackType,
+            message: message,
+            timestamp: new Date().toISOString()
+        };
+    }
+
+    // Метод для начала интервью с использованием tools
+    public async startInterview() {
+        if (!this.interviewBot.active) {
+            this.interviewBot.active = true;
+
+            const firstQuestion = this.interviewBot.get_current_question();
+            if (firstQuestion) {
+                await this.updateSystemInstructionForGemini(firstQuestion);
+
+                const welcomeMessage = `Привет! Начинаем техническое интервью на позицию ${this.interviewBot.position}. 
+                Интервью состоит из ${this.interviewBot.phases.length} фаз. 
+                Используй функцию ask_question чтобы задать первый вопрос.`;
+
+                await this.send({ text: welcomeMessage }, true);
+            }
+        }
+    }
+
+    private saveEvaluation(evaluation: any) {
+        if (this.interviewBot.answers.length > 0) {
+            const lastAnswer = this.interviewBot.answers[this.interviewBot.answers.length - 1];
+            lastAnswer.evaluation_score = evaluation.score || 0;
+            lastAnswer.notes = JSON.stringify(evaluation);
+            console.log("Evaluation saved:", lastAnswer);
+        }
+    }
+
+    private async saveUserMessage(sessionId: string, message: string) {
+        await this.saveMessageToDatabase({ sessionId, sender: 'user', message });
+        const chatMessage: ChatMessage = {
+            sender: 'user',
+            message: message,
+            id: uuidv4()
+        };
+        this.emit('messageAdded', chatMessage);
+    }
+
+    private async saveBotMessage(sessionId: string, message: string) {
+        await this.saveMessageToDatabase({ sessionId, sender: 'bot', message });
+        const chatMessage: ChatMessage = {
+            sender: 'bot',
+            message: message,
+            id: uuidv4()
+        };
+        this.emit('messageAdded', chatMessage);
+    }
+
+    private async saveQuestionCard(sessionId: string, questionText: string) {
+        const res = await this.saveCardToDatabase({
+            sessionId,
+            sender: 'bot',
+            message: questionText
+        });
+
+        if (res?.status !== 204 && res?.data) {
+            const card: ResponseCard = {
+                sender: res.data.sender,
+                header: res.data.header,
+                expanded: res.data.expanded,
+                data: res.data.data,
+                tags: res.data.tags,
+                codeExample: res.data.codeExample,
+                summary: res.data.summary,
+                error: res.data.error,
+                id: uuidv4()
+            };
+            this.emit('cardAdded', card);
+        }
     }
 
     async saveMessageToDatabase(messageData: { sessionId: string; sender: string; message: string }) {
@@ -118,7 +374,6 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
                 },
                 body: JSON.stringify(cardData)
             });
-            console.log(response)
 
             if (response.status === 204) {
                 return { status: 204, data: null };
@@ -133,128 +388,78 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
             const data = await response.json();
             return { status: response.status, data };
         } catch (error) {
-            console.error('Error saving message to database:', error);
+            console.error('Error saving card to database:', error);
+            return null;
         }
-    }
-
-    private async handleToolCallFromGemini(toolCall: any) {
-        console.log("Received tool call from Gemini:", toolCall);
-        const functionName = toolCall.functionCall.name;
-        const args = toolCall.functionCall.args || {};
-
-        let functionResponse: any = { name: functionName, response: { status: "success" } };
-
-        if (functionName === "evaluate_answer") {
-            // Save evaluation from Gemini's tool call
-            this.saveEvaluation(args);
-        } else if (functionName === "advance_interview") {
-            const action = args.action;
-            if (action === "next_question") {
-                this.interviewBot.advance_to_next_question();
-                // Optionally, update system instruction if a new question is ready
-                const newQuestion = this.interviewBot.get_current_question();
-                if (newQuestion) {
-                    await this.updateSystemInstructionForGemini(newQuestion);
-                }
-            } else if (action === "next_phase") {
-                this.interviewBot.advance_to_next_question(); // This will increment phase if question index resets
-                await this.updateSystemInstructionForGemini(this.interviewBot.get_current_question());
-            } else if (action === "complete") {
-                await this.finalizeInterview();
-            }
-        } else if (functionName === "summarize" || functionName === "get_context") {
-            // Placeholder for actual tool execution. Gemini expects a response.
-            // For a real scenario, you'd call a backend service or perform the action.
-            console.warn(`Tool function '${functionName}' called but not fully implemented for execution.`);
-            // You might need to send a more meaningful response based on the tool's actual output
-        } else {
-            console.warn(`Unknown function call: ${functionName}`);
-            functionResponse = { name: functionName, response: { status: "failed", error: "Unknown function" } };
-        }
-
-        // Send tool response back to Gemini
-        this.sendToolResponse({ functionResponses: [functionResponse] });
-    }
-
-    private saveEvaluation(evaluation: { score?: number; keywords_found?: string[]; needs_followup?: boolean; next_action?: string }) {
-        if (this.interviewBot.answers.length > 0) {
-            const lastAnswer = this.interviewBot.answers[this.interviewBot.answers.length - 1];
-            lastAnswer.evaluation_score = evaluation.score || 0;
-            lastAnswer.notes = JSON.stringify(evaluation);
-            console.log("Evaluation saved:", lastAnswer);
-        }
-    }
-
-    private async sendAnalysisToGemini(analysisResult: AnalysisResult) {
-        const currentQuestion = this.interviewBot.get_current_question();
-        const promptText = `Анализ ответа кандидата:
-- Найденные ключевые слова: ${analysisResult.analysis.found_keywords.join(', ')}
-- Полнота ответа: ${analysisResult.analysis.completeness_score.toFixed(2)}
-- Нужны уточнения: ${analysisResult.analysis.needs_follow_up ? 'Да' : 'Нет'}
-${analysisResult.analysis.suggested_follow_ups.length > 0
-            ? analysisResult.analysis.suggested_follow_ups[0]
-            : (currentQuestion ? `Переходи к следующему вопросу: ${currentQuestion.text}` : 'Интервью завершается.')}`;
-
-        console.log("Sending analysis to Gemini:", promptText);
-        // Send as a user turn (or client content) so Gemini can react
-        await this.send({ text: promptText }, true);
     }
 
     private async updateSystemInstructionForGemini(newQuestion: Question | null) {
         let systemPrompt: string;
+
         if (newQuestion) {
-            systemPrompt = `Ты ведешь техническое собеседование на позицию ${this.interviewBot.position}.
-ПРАВИЛА ПРОВЕДЕНИЯ:
-1. Говори четко и профессионально, но дружелюбно
-2. Задавай вопросы по очереди, не спеши
-3. Внимательно слушай ответы и анализируй их
-4. Задавай уточняющие вопросы если ответ неполный
-5. Поощряй кандидата, если он думает в правильном направлении
-6. Давай подсказки если кандидат застрял
-ТЕКУЩИЙ ВОПРОС: ${newQuestion.text}
-КРИТЕРИИ ОЦЕНКИ: ${newQuestion.evaluationCriteria.join(', ')}
-КЛЮЧЕВЫЕ СЛОВА: ${newQuestion.expectedKeywords.join(', ')}
-СТРУКТУРА ИНТЕРВЬЮ:
-${this.interviewBot.phases.map(p => `- ${p.name} (${p.duration_minutes} мин)`).join('\n')}
-Текущая фаза: ${this.interviewBot.current_phase}
-Теперь задай следующий вопрос.`;
+            systemPrompt = `Ты — опытный технический интервьюер.
+            
+            ДОСТУПНЫЕ ИНСТРУМЕНТЫ:
+            - evaluate_answer: Оценивай каждый ответ кандидата
+            - advance_interview: Переходи к следующему вопросу/фазе
+            - ask_question: Задавай вопросы кандидату
+            - provide_feedback: Давай обратную связь
+            
+            АЛГОРИТМ РАБОТЫ:
+            1. Получил ответ → вызови evaluate_answer
+            2. Если нужны уточнения → provide_feedback с типом "clarification"
+            3. Если ответ полный → advance_interview для следующего вопроса
+            4. Новый вопрос → ask_question
+            
+            ТЕКУЩИЕ ДАННЫЕ:
+            - Позиция: ${this.interviewBot.position}
+            - Текущая фаза: ${this.interviewBot.current_phase}
+            - Текущий вопрос: ${newQuestion.text}
+            - Ключевые слова: ${newQuestion.expectedKeywords.join(', ')}
+            - Критерии оценки: ${newQuestion.evaluationCriteria.join(', ')}
+            
+            ВАЖНО:
+            - Всегда используй инструменты для управления интервью
+            - Не задавай вопросы напрямую в тексте, используй ask_question
+            - Оценивай каждый ответ через evaluate_answer
+            - Будь дружелюбным и профессиональным
+            
+            Начни с использования ask_question для текущего вопроса.`;
         } else {
-            systemPrompt = `Интервью завершено. Поблагодари кандидата за время, дай краткий позитивный фидбек и объясни следующие шаги процесса найма.
-Будь профессиональным и вдохновляющим.`;
+            systemPrompt = `Интервью завершено. Используй provide_feedback с типом "final_feedback" 
+                          для финального фидбека кандидату.`;
         }
 
-        // To update system instruction, you need to send it as part of a new `LiveConnectConfig`
-        // or as a client content message that guides the model. The `@google/genai` library's
-        // `session.updateConfig` is typically used for this, but it's not directly exposed here.
-        // A common pattern is to send a "hint" or "instruction" as a user message to guide the model.
-        // For a full system instruction update, the connection might need to be re-established
-        // with a new config, or the model needs to be instructed via function calls or user messages.
+        this.send({
+            text: `[SYSTEM_UPDATE] ${systemPrompt}`
+        }, true);
 
-        // For now, we'll send it as a user message to guide the model.
-        await this.send({ text: `[SYSTEM_UPDATE] New context for the interview: ${systemPrompt}` }, true);
-        console.log("Updated system instruction sent to Gemini.");
+        console.log("Updated system instruction with tools sent to Gemini.");
     }
 
     private async finalizeInterview() {
         console.log("Finalizing interview...");
+
         const finalReport = this.interviewBot.generate_final_report();
         console.log("Final Interview Report:", finalReport);
 
-        // Optionally save the final report to the database
         const userSettings = await getCurrentUserSettingsAsync();
         if (userSettings.activeSessionId) {
-            // Assuming you have an API endpoint to save the final report
-            // await fetch('http://localhost:8080/api/interview/report/save', {
-            //     method: 'POST',
-            //     headers: { 'Content-Type': 'application/json' },
-            //     body: JSON.stringify({ sessionId: userSettings.activeSessionId, report: finalReport })
-            // });
+            await this.saveMessageToDatabase({
+                sessionId: userSettings.activeSessionId,
+                sender: 'system',
+                message: `Interview completed. Final report: ${JSON.stringify(finalReport)}`
+            });
         }
 
-        // Send a final message to Gemini to conclude the interview
-        await this.send({ text: `Интервью завершено. Пожалуйста, поблагодари кандидата и предоставь краткий фидбек.` }, true);
-
-        this.disconnect(); // Disconnect after completion
+        // Даем время на финальный feedback через tool
+        setTimeout(() => {
+            this.disconnect();
+        }, 10000);
     }
 
+    // Метод для проверки активности интервью
+    public isInterviewActive(): boolean {
+        return this.interviewBot.active;
+    }
 }

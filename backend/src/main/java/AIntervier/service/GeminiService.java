@@ -31,31 +31,14 @@ public class GeminiService {
     private String endpoint;
 
     private final RestTemplate restTemplate = new RestTemplate();
-    private final List<Map<String, String>> contextBuffer = new ArrayList<>();
-    private final int contextThreshold = 3;
     private final AtomicBoolean requestInProgress = new AtomicBoolean(false);
     private final ExecutorService executor = Executors.newFixedThreadPool(5);
 
     public Map<String, Object> askGemini(String prompt, String jobTitle) {
-        synchronized (contextBuffer) {
-            contextBuffer.add(Map.of("text", prompt));
-
-            if (contextBuffer.size() >= contextThreshold && !requestInProgress.get()) {
-                CompletableFuture<Map<String, Object>> future = CompletableFuture.supplyAsync(() -> {
-                    requestInProgress.set(true);
-                    Map<String, Object> response = sendGeminiRequest(jobTitle, prompt);
-                    contextBuffer.clear();
-                    requestInProgress.set(false);
-                    return response;
-                }, executor);
-                try {
-                    return future.get();
-                } catch (InterruptedException | ExecutionException e) {
-                    return Map.of("error", e.getMessage());
-                }
-            } else {
-                return Map.of();
-            }
+        try {
+            return sendGeminiRequest(jobTitle, prompt);
+        } catch (Exception e) {
+            return Map.of("error", e.getMessage());
         }
     }
 
@@ -64,18 +47,13 @@ public class GeminiService {
             // Prepare the prompt with context
             StringBuilder promptBuilder = new StringBuilder();
             promptBuilder.append("System Instruction:\n");
-            promptBuilder.append("You are an AI assistant helping conduct technical interviews.  Analyze the conversation history and user input to determine if a supplemental card is needed. If so, generate a JSON response containing the card; otherwise, respond with an empty JSON object (`{}`).\n\n");
+            promptBuilder.append("You are an AI assistant helping conduct technical interviews.  Answer this question as a senior Java developer would. Use a structured approach: definition → key features → code example → use cases. If you have good and useful answer, generate a JSON response containing the card; otherwise, respond with an empty JSON object (`{}`).\n\n");
 
-            promptBuilder.append("Context:\n");
-            promptBuilder.append("Conversation History:\n");
-            for (Map<String, String> turn : contextBuffer) {
-                promptBuilder.append(turn.get("text")).append("\n");
-            }
-            promptBuilder.append("Current User Input:\n").append(promptText).append("\n");
+            promptBuilder.append("Question:\n").append(promptText).append("\n");
             promptBuilder.append("Interview Position:\n").append(jobTitle).append("\n");
 
             promptBuilder.append("Card Generation Criteria:\n");
-            promptBuilder.append("Generate a card ONLY if the user input needs additional information relevant to the interview topic and key skills.  The card should provide concise supplemental information to help the interviewer assess the candidate.\n\n");
+            promptBuilder.append("Your answer should provide concise supplemental information to help the candidate check his or her answer for correctness and completeness.\n");
 
             promptBuilder.append("JSON Structure:\n");
             promptBuilder.append("```json\n");

@@ -24,6 +24,10 @@ interface SettingsState {
   persistUpdates: (settings: UserSettings) => void;
   fetchSettings: () => Promise<UserSettings | undefined>;
   settingsLoading: boolean
+  sessionType: string;
+  sessionActive: boolean;
+  activateSession: (activateSession: boolean) => void;
+  updateSessionType: (sessionType: string) => void;
 }
 
 const defaultUserSettings: UserSettings = {
@@ -31,7 +35,8 @@ const defaultUserSettings: UserSettings = {
     firstName: 'Evgeny',
     lastName: 'Kononov',
     activeSessionId: '1234567890',
-    systemInstruction: 'You are helpful assistant'
+    systemInstruction: 'You are helpful assistant',
+    sessionActive: false
 };
 
 export const getCurrentUserSettingsAsync = async () => {
@@ -41,8 +46,10 @@ export const getCurrentUserSettingsAsync = async () => {
 
 export const useSettingsStore = create<SettingsState>((set) => ({
   settings: defaultUserSettings,
+  sessionType: '',
   settingsLoading: true,
   cards: [],
+  sessionActive: false,
   updateSettingsState: (settings) => {
     set((state) => ({
         ...state.settings, settings: settings,
@@ -55,7 +62,6 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     }));
   },
   persistUpdates: async (settings) => {
-    console.log(settings)
     const userId = 1;
     const response = await fetch(`http://localhost:8080/api/settings/${userId}/save`, {
         method: "PUT",
@@ -82,4 +88,6 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       console.error('Error fetching messages:', error);
     }
   },
+  updateSessionType: (sessionType) => set({ sessionType: sessionType }),
+  activateSession: (sessionActive) => set({ sessionActive: sessionActive }),
 }));

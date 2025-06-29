@@ -51,11 +51,12 @@ public class ChatController {
     private ResponseEntity<ResponseCard> getResponseCardResponseEntity(ChatRequest request, Map<String, Object> botReply) {
         if ((boolean) botReply.get("generateCard")) {
             ResponseCard card = new ResponseCard();
-            card.setData((String) botReply.get("data"));
+            Map<String, Object> cardMap = (Map<String, Object>) botReply.get("card");
+            card.setData((String) cardMap.get("data"));
             card.setSessionId(request.getSessionId());
-            card.setHeader((String) botReply.get("header"));
-            card.setTags((List<String>) botReply.getOrDefault("tags", new ArrayList<>()));
-            card.setSummary((String) botReply.get("summary"));
+            card.setHeader((String) cardMap.get("header"));
+            card.setTags((List<String>) cardMap.getOrDefault("tags", new ArrayList<>()));
+            card.setSummary((String) cardMap.get("summary"));
             card.setCreated(LocalDateTime.now());
             card.setSender(request.getJobTitle());
             cardRepository.save(card);
@@ -67,7 +68,6 @@ public class ChatController {
 
     @PostMapping("/save")
     public ResponseEntity<ChatResponse> saveMessage(@RequestBody ChatRequest request) {
-        System.out.println(request);
         ChatMessage message = new ChatMessage();
         message.setSessionId(request.getSessionId());
         message.setSender(request.getJobTitle());

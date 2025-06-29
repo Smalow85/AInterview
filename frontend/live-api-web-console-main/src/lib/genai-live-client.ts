@@ -201,6 +201,7 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
       return;
     }
     if (message.toolCall) {
+      console.log(message.toolCall)
       this.log("server.toolCall", message);
       this.emit("toolcall", message.toolCall);
       return;

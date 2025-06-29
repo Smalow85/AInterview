@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useSettingsStore } from "../../lib/store-settings";
 import { getCurrentUserSettingsAsync } from "../../lib/store-settings";
 import InterviewQuestionGenerator from "../interview-question-generator/InterviewQuestionGenerator";
+import SimpleConversationGenerator from "../simple-conversation-generator/SimpleConverationGenerator";
 import Modal from "../main-panel/Modal";
 
 export default function SidePanel() {
@@ -14,18 +15,33 @@ export default function SidePanel() {
   const loggerRef = useRef<HTMLDivElement>(null);
   const loggerLastHeightRef = useRef<number>(-1);
   const { messages, addMessage, clearMessages } = useLoggerStore();
-  const { settings, persistUpdates } = useSettingsStore();
-  const [showGenerator, setShowGenerator] = useState(false);
+  const { settings, persistUpdates, updateSessionType } = useSettingsStore();
 
-
-  const handleStartConversation = async () => {
+  const [showInterviewGenerator, setShowInterviewGenerator] = useState(false);
+  const [showSimpleConversation, setShowSimpleConversation] = useState(false);
+  
+  const handleStartInterview = async () => {
     const newSessionId = uuidv4();
+    persistUpdates({
+      ...settings,
+      activeSessionId: newSessionId
+    });
+    updateSessionType('interview')
+    console.log("Interview started with session ID:", newSessionId);
+    
+    setShowInterviewGenerator(true);
+  };
+  const handleStartSimpleConversation = async () => {
+    const newSessionId = uuidv4();
+    console.log("Persist")
     persistUpdates({
       ...settings,
       activeSessionId: newSessionId,
     });
+    updateSessionType('default')
     console.log("Conversation started with session ID:", newSessionId);
-    setShowGenerator(true);
+
+    setShowSimpleConversation(true);
   };
 
   const handleEndConversation = async () => {
@@ -93,11 +109,18 @@ export default function SidePanel() {
           </>
         ) : (
           <>
-          <button className="start-conversation-button" onClick={handleStartConversation}>
-            Start Conversation
+          <button className="clear-button" onClick={handleStartInterview}>
+            Start Interview
           </button>
-          <Modal isOpen={showGenerator} onClose={() => setShowGenerator(false) }>
-            <InterviewQuestionGenerator />
+          <button className="clear-button" onClick={handleStartSimpleConversation}>
+            Start Simple Conversation
+          </button>
+          <Modal isOpen={showInterviewGenerator} onClose={() => setShowInterviewGenerator(false) }>
+            <InterviewQuestionGenerator onClose={() => setShowInterviewGenerator(false) }/>
+          </Modal>
+
+          <Modal isOpen={showSimpleConversation} onClose={() => setShowSimpleConversation(false) }>
+            <SimpleConversationGenerator onClose={() => setShowSimpleConversation(false) }/>
           </Modal>
           </>
         )}

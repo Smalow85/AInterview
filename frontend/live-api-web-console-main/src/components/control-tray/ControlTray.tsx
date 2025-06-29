@@ -92,20 +92,34 @@ function ControlTray({
 
   useEffect(() => {
     const onData = (base64: string) => {
-      client.sendRealtimeInput([
-        {
+      try {
+        client
+        .sendRealtimeInput([ 
+          {
           mimeType: "audio/pcm;rate=16000",
           data: base64,
         },
-      ]);
+        ])
+      } catch(error) {
+          console.error("Error sending realtime input:", error);
+        };
     };
+
     if (connected && !muted && audioRecorder) {
       console.log("starting audio recorder");
-      audioRecorder.on("data", onData).on("volume", setInVolume).start();
+      try {
+        audioRecorder
+        .on("data", onData)
+        .on("volume", setInVolume)
+        .start() 
+       } catch(error)  {
+          console.error("Error starting audio recorder:", error);
+        };
     } else {
       console.log("Stopping audio recorder");
       audioRecorder.stop();
     }
+
     return () => {
       audioRecorder.off("data", onData).off("volume", setInVolume);
     };
