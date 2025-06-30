@@ -4,12 +4,15 @@ import { ChatMessage } from "../types/chat-message";
 import { ResponseCard } from "../types/response-card";
 import { v4 as uuidv4 } from 'uuid';
 import { getCurrentUserSettingsAsync } from "./store-settings";
-import { TechnicalInterviewBot, Question, AnalysisResult } from "../types/interview-types";
+import { TechnicalInterviewBot } from "../types/interview-types";
+import { Question } from "../types/interview-question";
+import { ThemedConversationBot } from "../types/themed-conversation-types";
 
 export class EnhancedGenAILiveClient extends GenAILiveClient {
     private accumulatedText: string = "";
     private accumulatedInputText: string = "";
     public interviewBot: TechnicalInterviewBot;
+    public conversationBot: ThemedConversationBot;
     private followUpCount: number = 0;
     private readonly maxFollowUps: number = 3;
     private lastUserAnswer: string = "";
@@ -17,9 +20,11 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
     constructor(options: LiveClientOptions) {
         super(options);
         this.interviewBot = new TechnicalInterviewBot();
+        this.conversationBot = new ThemedConversationBot();
         this.onmessage = this.onmessage.bind(this);
         this.handleTurnComplete = this.handleTurnComplete.bind(this);
         this.sendRealtimeInput = this.sendRealtimeInput.bind(this);
+        this.saveResumptionTokenToDatabase = this.saveResumptionTokenToDatabase.bind(this);
     }
 
     protected async onmessage(message: any) {
@@ -27,6 +32,12 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         if (message.toolCall) {
             this.handleToolCall(message.toolCall);
             return;
+        }
+        if (message.sessionResumptionUpdate) {
+            if (message.sessionResumptionUpdate.resumable && message.sessionResumptionUpdate.newHandle) {
+                const userSettings = await getCurrentUserSettingsAsync();
+                this.saveResumptionTokenToDatabase({ sessionId: userSettings.activeSessionId, resumptionToken: message.sessionResumptionUpdate.newHandle })
+            }
         }
 
         if (message.serverContent) {
@@ -42,8 +53,6 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         }
     }
 
-
-
     private async handleTurnComplete() {
         const userSettings = await getCurrentUserSettingsAsync();
 
@@ -53,7 +62,6 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
             this.accumulatedInputText = '';
         }
 
-        // Сохраняем ответ бота
         if (this.accumulatedText) {
             await this.saveBotMessage(userSettings.activeSessionId, this.accumulatedText);
             this.accumulatedText = '';
@@ -69,26 +77,20 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         if (Array.isArray(toolCall)) {
             // Iterate through the array and process each tool call
             for (const call of toolCall) {
-                console.log("inside", call);
                 await this.processToolCall(call);
             }
         } else if (toolCall && toolCall.functionCalls && Array.isArray(toolCall.functionCalls)) {
             // Check if toolCall has functionCalls property and it's an array
             for (const call of toolCall.functionCalls) {
-                console.log("inside functionCalls", call);
                 await this.processToolCall(call);
             }
         } else {
-            console.log("outside");
-            // If it's not an array, process it as a single tool call
             await this.processToolCall(toolCall);
         }
     }
-    
+
     private async processToolCall(toolCall: any) {
         console.log("Received tool call:", toolCall);
-
-        console.log(toolCall)
 
         const functionName = toolCall.functionCall?.name || toolCall.name;
         const args = toolCall.functionCall?.args || toolCall.args || {};
@@ -141,7 +143,6 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
             return { status: "error", error: "No user answer to evaluate" };
         }
 
-        // Сохраняем оценку в нашем интервью боте
         this.saveEvaluation({
             score: args.score,
             keywords_found: args.keywords_found || [],
@@ -149,7 +150,6 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
             next_action: args.next_action
         });
 
-        // Обновляем счетчик follow-up вопросов
         if (args.next_action === "ask_followup") {
             this.followUpCount++;
         } else {
@@ -246,8 +246,7 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         const questionText = args.question_text;
         const additionalContext = args.additional_context || "";
 
-        // Сохраняем вопрос как карточку
-        await this.saveQuestionCard(userSettings.activeSessionId, questionText);
+        this.saveQuestionCard(userSettings.activeSessionId, questionText);
 
         // Помечаем, что вопрос был задан
         this.interviewBot.questionSent = true;
@@ -387,6 +386,21 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
 
             const data = await response.json();
             return { status: response.status, data };
+        } catch (error) {
+            console.error('Error saving card to database:', error);
+            return null;
+        }
+    }
+
+    saveResumptionTokenToDatabase(hanleData: { sessionId: string; resumptionToken: string }) {
+        try {
+            fetch('http://localhost:8080/api/settings/resumption-token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(hanleData)
+            });
         } catch (error) {
             console.error('Error saving card to database:', error);
             return null;

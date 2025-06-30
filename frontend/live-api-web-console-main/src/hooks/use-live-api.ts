@@ -23,12 +23,10 @@ import { audioContext } from "../lib/utils";
 import VolMeterWorket from "../lib/worklets/vol-meter";
 import { useSettingsStore } from "../lib/store-settings";
 import { PromptConstructor } from "../lib/promptConstructor";
-
-import {
-  FunctionDeclaration,
-  Type,
-} from "@google/genai";
+import { useThemedConversationStore } from "../lib/store-conversation"; 
 import { useInterviewQuestionsStore } from "../lib/store-interview-question";
+import { advance_interview_declaration, ask_question, evaluate_answer_declaration, provide_feedback } from "../types/tool-types";
+
 export type UseLiveAPIResults = {
   client: EnhancedGenAILiveClient;
   setConfig: (config: LiveConnectConfig) => void;
@@ -41,106 +39,6 @@ export type UseLiveAPIResults = {
   volume: number;
 };
 
-const evaluate_answer_declaration: FunctionDeclaration = {
-  name: "evaluate_answer",
-  description: "Оценить ответ кандидата и определить следующие шаги",
-  parameters: {
-    type: Type.OBJECT,
-    properties: {
-      score: {
-        type: Type.STRING,
-        description: "Оценка ответа от 1 до 10",
-        minimum: 1,
-        maximum: 10
-      },
-      keywords_found: {
-        type: Type.ARRAY,
-        items: { type: Type.STRING },
-        description: "Найденные ключевые слова в ответе"
-      },
-      completeness: {
-        type: Type.NUMBER,
-        description: "Полнота ответа от 0 до 1",
-        minimum: 0,
-        maximum: 1
-      },
-      needs_followup: {
-        type: Type.BOOLEAN,
-        description: "Нужны ли уточняющие вопросы"
-      },
-      followup_question: {
-        type: Type.STRING,
-        description: "Уточняющий вопрос, если needs_followup = true"
-      },
-      next_action: {
-        type: Type.STRING,
-        enum: ["ask_followup", "next_question", "next_phase", "complete_interview"],
-        description: "Следующее действие в интервью"
-      }
-    },
-    required: ["score", "completeness", "needs_followup", "next_action"]
-  }
-};
-
-const advance_interview_declaration: FunctionDeclaration = {
-  name: "advance_interview",
-  description: "Перейти к следующему вопросу или фазе интервью",
-  parameters: {
-    type: Type.OBJECT,
-    properties: {
-      action: {
-        type: Type.STRING,
-        enum: ["next_question", "next_phase", "complete"],
-        description: "Тип перехода"
-      },
-      reason: {
-        type: Type.STRING,
-        description: "Причина перехода"
-      }
-    },
-    required: ["action"]
-  }
-};
-
-const ask_question: FunctionDeclaration = {
-  name: "ask_question",
-  description: "Задать текущий вопрос кандидату",
-  parameters: {
-    type: Type.OBJECT,
-    properties: {
-      question_text: {
-        type: Type.STRING,
-        description: "Текст вопроса для кандидата"
-      },
-      additional_context: {
-        type: Type.STRING,
-        description: "Дополнительный контекст или пояснения к вопросу"
-      }
-    },
-    required: ["question_text"]
-  }
-};
-
-const provide_feedback: FunctionDeclaration = {
-  name: "provide_feedback",
-  description: "Дать обратную связь кандидату",
-  parameters: {
-    type: Type.OBJECT,
-    properties: {
-      feedback_type: {
-        type: Type.STRING,
-        enum: ["encouragement", "hint", "clarification", "final_feedback"],
-        description: "Тип обратной связи"
-      },
-      message: {
-        type: Type.STRING,
-        description: "Сообщение с обратной связью"
-      }
-    },
-    required: ["feedback_type", "message"]
-  }
-};
-
 export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
   const client = useMemo(() => new EnhancedGenAILiveClient(options), [options]);
   const audioStreamerRef = useRef<AudioStreamer | null>(null);
@@ -148,6 +46,7 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
   const [config, setConfig] = useState<LiveConnectConfig>(
     {
       systemInstruction: '',
+      contextWindowCompression: { slidingWindow: {} },
       realtimeInputConfig: {
         automaticActivityDetection: {
           disabled: false,
@@ -161,7 +60,7 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
       outputAudioTranscription: { enabled: true },
       tools: [
         { googleSearch: {} },
-        { functionDeclarations: [evaluate_answer_declaration, provide_feedback] },
+        { functionDeclarations: [] },
       ],
     }
   );
@@ -169,15 +68,21 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
   const [volume, setVolume] = useState(0);
   const { settings, sessionType, settingsLoading, sessionActive } = useSettingsStore();
   const { phases, position, phasesLoading } = useInterviewQuestionsStore()
+  const { learningGoals, theme, conversationLoading } = useThemedConversationStore();
   const promptConstructor = new PromptConstructor();
 
   const interviewBot = useMemo(() => client.interviewBot, [client]);
+  const conversationBot = useMemo(() => client.conversationBot, [client]);
 
   async function setupLiveAPIConfig() {
     var initialSystemPrompt = null;
     if (sessionType === 'interview') {
       interviewBot._initializeInterviewStructure(phases, position)
-      initialSystemPrompt = promptConstructor.constructInitialSystemPrompt(interviewBot, phases);
+      initialSystemPrompt = promptConstructor.constructInterviewInitialSystemPrompt(interviewBot, phases);
+    }
+    if (sessionType === 'themed_interview') {
+      conversationBot._initializeThemedConversationStructure(learningGoals, theme)
+      initialSystemPrompt = promptConstructor.constructThemedConversationInitialSystemPrompt(conversationBot, learningGoals, theme);
     }
     setConfig({
       systemInstruction: initialSystemPrompt || settings.systemInstruction,
@@ -192,6 +97,7 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
           silenceDurationMs: 300,
         }
       },
+      sessionResumption: { handle: settings.resumptionToken },
       tools: [
         { googleSearch: {} },
         { functionDeclarations: [evaluate_answer_declaration, advance_interview_declaration, ask_question, provide_feedback] },
@@ -213,10 +119,8 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
   }, []);
 
   useEffect(() => {
-    console.log(settings)
-    console.log(sessionType)
     const connectToLiveAPI = async () => {
-      if (!settingsLoading && (!phasesLoading || sessionType === 'default') && settings.activeSessionId) {  //Check if stores and session are ready
+      if (!settingsLoading && (!phasesLoading || !conversationLoading || sessionType === 'default') && settings.activeSessionId) {  //Check if stores and session are ready
         try {
           await setupLiveAPIConfig();
           await connect();

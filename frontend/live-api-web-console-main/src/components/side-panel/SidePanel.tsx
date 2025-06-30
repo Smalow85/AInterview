@@ -6,8 +6,9 @@ import { useLoggerStore } from "../../lib/store-logger";
 import { v4 as uuidv4 } from 'uuid';
 import { useSettingsStore } from "../../lib/store-settings";
 import { getCurrentUserSettingsAsync } from "../../lib/store-settings";
-import InterviewQuestionGenerator from "../interview-question-generator/InterviewQuestionGenerator";
-import SimpleConversationGenerator from "../simple-conversation-generator/SimpleConverationGenerator";
+import InterviewQuestionGenerator from "../conversations/InterviewQuestionGenerator";
+import SimpleConversationGenerator from "../conversations/SimpleConverationGenerator";
+import ThemedConversationGenerator from "../conversations/ThemedConversationGenerator";
 import Modal from "../main-panel/Modal";
 
 export default function SidePanel() {
@@ -18,8 +19,35 @@ export default function SidePanel() {
   const { settings, persistUpdates, updateSessionType } = useSettingsStore();
 
   const [showInterviewGenerator, setShowInterviewGenerator] = useState(false);
+  const [showThemedConsultationGenerator, setShowThemedConsultationGenerator] = useState(false);
   const [showSimpleConversation, setShowSimpleConversation] = useState(false);
-  
+  const [showConversationTypeDialog, setShowConversationTypeDialog] = useState(false);
+  const [selectedConversationType, setSelectedConversationType] = useState<string | null>(null);
+
+  const conversationTypes = [
+    { value: 'interview', label: 'Real Interview' },
+    { value: 'simple', label: 'Simple Conversation' },
+    { value: 'themed', label: 'Consultation on selected theme' },
+  ];
+
+  const handleStartConversation = () => {
+    setShowConversationTypeDialog(true);
+  };
+
+  const handleConversationTypeSelected = (type: string) => {
+    setSelectedConversationType(type);
+    setShowConversationTypeDialog(false);
+
+    if (type === 'interview') {
+      setShowInterviewGenerator(true);
+    } else if (type === 'simple') {
+      setShowSimpleConversation(true);
+    } else if (type === 'themed') {
+      setShowThemedConsultationGenerator(true);
+    }
+  };
+
+
   const handleStartInterview = async () => {
     const newSessionId = uuidv4();
     persistUpdates({
@@ -31,6 +59,7 @@ export default function SidePanel() {
     
     setShowInterviewGenerator(true);
   };
+  
   const handleStartSimpleConversation = async () => {
     const newSessionId = uuidv4();
     console.log("Persist")
@@ -109,12 +138,31 @@ export default function SidePanel() {
           </>
         ) : (
           <>
-          <button className="clear-button" onClick={handleStartInterview}>
-            Start Interview
+          <button className="clear-button" onClick={handleStartConversation}>
+            Start Conversation
           </button>
-          <button className="clear-button" onClick={handleStartSimpleConversation}>
-            Start Simple Conversation
-          </button>
+
+          <Modal isOpen={showConversationTypeDialog} onClose={() => setShowConversationTypeDialog(false)}>
+            <h2>Select conversation type:</h2>
+            <div className="conversation-type-dialog">
+              <select
+                value={selectedConversationType || ''}
+                onChange={(e) => handleConversationTypeSelected(e.target.value)}
+              >
+                <option value="" disabled>
+                   Select a type...
+                </option>
+                {conversationTypes.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </Modal>
+          <Modal isOpen={showThemedConsultationGenerator} onClose={() => setShowThemedConsultationGenerator(false) }>
+            <ThemedConversationGenerator onClose={() => setShowThemedConsultationGenerator(false) }/>
+          </Modal>
           <Modal isOpen={showInterviewGenerator} onClose={() => setShowInterviewGenerator(false) }>
             <InterviewQuestionGenerator onClose={() => setShowInterviewGenerator(false) }/>
           </Modal>

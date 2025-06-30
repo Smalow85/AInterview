@@ -103,8 +103,6 @@
 
 
 .side-panel-title {
-  font-family: var(--font-family);
-  font-size: 1.35rem;
   font-weight: 100;
   padding: 16px 24px;
   color: var(--Neutral-70);
@@ -114,4 +112,28 @@
   flex: 1 1 auto;
   transition: color 0.2s;
   user-select: none;
+}
+
+select {
+  width: 100%;
+  padding: 12px 20px;
+  background-color: var(--Neutral-30);
+  color: var(--Neutral-90);
+  border: 1px solid var(--Neutral-50);
+  border-radius: 8px;
+  font-family: var(--font-family);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  appearance: none; /* Remove default arrow */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E"); /* Custom arrow */
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--Neutral-40);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }

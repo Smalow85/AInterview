@@ -35,6 +35,9 @@ public class UserSettings {
     @Column(name = "created", columnDefinition = "timestamp default current_timestamp", updatable = false, insertable = false)
     private LocalDateTime created;
 
+    @Column(name = "session_resumption_token")
+    private String resumptionToken;
+
     public Long getId() {
         return id;
     }
@@ -101,6 +104,14 @@ public class UserSettings {
 
     public void setSystemInstruction(String systemInstruction) {
         this.systemInstruction = systemInstruction;
+    }
+
+    public String getResumptionToken() {
+        return resumptionToken;
+    }
+
+    public void setResumptionToken(String resumptionToken) {
+        this.resumptionToken = resumptionToken;
     }
 }
 

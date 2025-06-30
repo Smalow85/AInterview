@@ -1,6 +1,7 @@
 package AIntervier.rest;
 
 import AIntervier.model.UserSettings;
+import AIntervier.rest.data.ResumptionTokenRequest;
 import AIntervier.rest.data.UserSettingsRequest;
 import AIntervier.repository.UserSettingsRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -26,6 +27,16 @@ public class UserSettingController {
     @GetMapping("/{userId}/session")
     public String getActiveSession(@PathVariable String userId) {
         UserSettings settings = repository.findById(Long.parseLong(userId)).orElseGet(this::getDefaultUser);
+        return settings.getActiveSessionId();
+    }
+
+    @PostMapping("/resumption-token")
+    public String saveResumptionTokenForSession(@RequestBody ResumptionTokenRequest request) {
+        UserSettings settings = repository.getByActiveSessionId(request.getSessionId());
+        if (settings != null) {
+            settings.setResumptionToken(request.getResumptionToken());
+            repository.save(settings);
+        }
         return settings.getActiveSessionId();
     }
 
