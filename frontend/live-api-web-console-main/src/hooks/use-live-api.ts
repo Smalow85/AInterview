@@ -23,7 +23,7 @@ import { audioContext } from "../lib/utils";
 import VolMeterWorket from "../lib/worklets/vol-meter";
 import { useSettingsStore } from "../lib/store-settings";
 import { PromptConstructor } from "../lib/promptConstructor";
-import { useThemedConversationStore } from "../lib/store-conversation"; 
+import { useThemedConversationStore } from "../lib/store-conversation";
 import { useInterviewQuestionsStore } from "../lib/store-interview-question";
 import { advance_interview_declaration, ask_question, evaluate_answer_declaration, provide_feedback } from "../types/tool-types";
 
@@ -66,23 +66,25 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
   );
   const [connected, setConnected] = useState(false);
   const [volume, setVolume] = useState(0);
-  const { settings, sessionType, settingsLoading, sessionActive } = useSettingsStore();
-  const { phases, position, phasesLoading } = useInterviewQuestionsStore()
-  const { learningGoals, theme, conversationLoading } = useThemedConversationStore();
+  const { settings, settingsLoaded } = useSettingsStore();
+  const { interview } = useInterviewQuestionsStore()
+  const { themedConversation } = useThemedConversationStore();
   const promptConstructor = new PromptConstructor();
 
   const interviewBot = useMemo(() => client.interviewBot, [client]);
   const conversationBot = useMemo(() => client.conversationBot, [client]);
 
   async function setupLiveAPIConfig() {
+    console.log(settings)
     var initialSystemPrompt = null;
-    if (sessionType === 'interview') {
-      interviewBot._initializeInterviewStructure(phases, position)
-      initialSystemPrompt = promptConstructor.constructInterviewInitialSystemPrompt(interviewBot, phases);
+    if (settings.sessionType === 'interview') {
+      interviewBot._initializeInterviewStructure(interview)
+      initialSystemPrompt = promptConstructor.constructInterviewInitialSystemPrompt(interviewBot, interview.phases);
     }
-    if (sessionType === 'themed_interview') {
-      conversationBot._initializeThemedConversationStructure(learningGoals, theme)
-      initialSystemPrompt = promptConstructor.constructThemedConversationInitialSystemPrompt(conversationBot, learningGoals, theme);
+    if (settings.sessionType === 'themed_interview') {
+      console.log('theme', themedConversation)
+      conversationBot._initializeThemedConversationStructure(themedConversation.learningGoals, themedConversation.theme)
+      initialSystemPrompt = promptConstructor.constructThemedConversationInitialSystemPrompt(conversationBot, themedConversation);
     }
     setConfig({
       systemInstruction: initialSystemPrompt || settings.systemInstruction,
@@ -97,13 +99,23 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
           silenceDurationMs: 300,
         }
       },
-      sessionResumption: { handle: settings.resumptionToken },
+      //sessionResumption: { handle: settings.resumptionToken },
       tools: [
         { googleSearch: {} },
         { functionDeclarations: [evaluate_answer_declaration, advance_interview_declaration, ask_question, provide_feedback] },
       ],
     });
   }
+
+  const connectWithConfig = async () => {
+    if (config && config.systemInstruction) {
+      try {
+        await connect();
+      } catch (error) {
+        console.error("Error connecting to Live API:", error);
+      }
+    }
+  };
 
   useEffect(() => {
     const setupAudio = async () => {
@@ -120,27 +132,23 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
 
   useEffect(() => {
     const connectToLiveAPI = async () => {
-      if (!settingsLoading && (!phasesLoading || !conversationLoading || sessionType === 'default') && settings.activeSessionId) {  //Check if stores and session are ready
+      console.log('connectToLiveAPI')
+      if (settingsLoaded || settings.sessionActive) {
         try {
           await setupLiveAPIConfig();
-          await connect();
-          client.startInterview();
+          await connectWithConfig();
         } catch (error) {
-          console.error("Error connecting to Live API:", error);
+          console.error("Error setting up Live API config:", error);
+          return;
         }
       }
     };
     connectToLiveAPI();
-  }, [settingsLoading, phasesLoading, settings.activeSessionId, sessionType, sessionActive]);
+  }, [settings, themedConversation, interview]);
 
   useEffect(() => {
     const onOpen = () => {
       setConnected(true);
-      // Send initial greeting/question once connected
-      //const currentQuestion = client.interviewBot.get_current_question();
-      //client.send({
-      //  text: `Начни интервью с приветствия и первого вопроса: ${currentQuestion ? currentQuestion.text : ''}`
-      //}, true);
     };
 
     const onClose = () => {
@@ -165,8 +173,8 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
       .on("open", onOpen)
       .on("close", onClose)
       .on("interrupted", stopAudioStreamer)
-      .on("audio", onAudio);
-      //.on("toolcall", onToolCall);
+      .on("audio", onAudio)
+      .on("toolcall", onToolCall);
 
     return () => {
       client
@@ -175,7 +183,7 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
         .off("close", onClose)
         .off("interrupted", stopAudioStreamer)
         .off("audio", onAudio)
-        //.off("toolcall", onToolCall)
+        .off("toolcall", onToolCall)
         .disconnect();
     };
   }, [client, audioStreamerRef]);

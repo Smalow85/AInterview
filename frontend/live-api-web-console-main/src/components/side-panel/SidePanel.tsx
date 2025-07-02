@@ -16,7 +16,7 @@ export default function SidePanel() {
   const loggerRef = useRef<HTMLDivElement>(null);
   const loggerLastHeightRef = useRef<number>(-1);
   const { messages, addMessage, clearMessages } = useLoggerStore();
-  const { settings, persistUpdates, updateSessionType } = useSettingsStore();
+  const { settings } = useSettingsStore();
 
   const [showInterviewGenerator, setShowInterviewGenerator] = useState(false);
   const [showThemedConsultationGenerator, setShowThemedConsultationGenerator] = useState(false);
@@ -45,32 +45,6 @@ export default function SidePanel() {
     } else if (type === 'themed') {
       setShowThemedConsultationGenerator(true);
     }
-  };
-
-
-  const handleStartInterview = async () => {
-    const newSessionId = uuidv4();
-    persistUpdates({
-      ...settings,
-      activeSessionId: newSessionId
-    });
-    updateSessionType('interview')
-    console.log("Interview started with session ID:", newSessionId);
-    
-    setShowInterviewGenerator(true);
-  };
-  
-  const handleStartSimpleConversation = async () => {
-    const newSessionId = uuidv4();
-    console.log("Persist")
-    persistUpdates({
-      ...settings,
-      activeSessionId: newSessionId,
-    });
-    updateSessionType('default')
-    console.log("Conversation started with session ID:", newSessionId);
-
-    setShowSimpleConversation(true);
   };
 
   const handleEndConversation = async () => {

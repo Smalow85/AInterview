@@ -1,6 +1,8 @@
 package AIntervier.service;
 
 import AIntervier.model.InterviewPlan;
+import AIntervier.model.LearningGoalsPlan;
+import AIntervier.rest.data.ConversationRequest;
 import AIntervier.rest.data.InterviewQestionRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -31,8 +33,6 @@ public class GeminiService {
     private String endpoint;
 
     private final RestTemplate restTemplate = new RestTemplate();
-    private final AtomicBoolean requestInProgress = new AtomicBoolean(false);
-    private final ExecutorService executor = Executors.newFixedThreadPool(5);
 
     public Map<String, Object> askGemini(String prompt, String jobTitle) {
         try {
@@ -256,17 +256,74 @@ public class GeminiService {
         );
     }
 
-    private String parseGeneratedText(String geminiResponse) throws JsonProcessingException {
+    public LearningGoalsPlan generateLearningObjectivesPlan(ConversationRequest request, String requestId) throws Exception {
+        String prompt = buildLearningObjectivesPrompt(request, requestId);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String, Object> messageContent = Map.of(
+                "contents", List.of(
+                        Map.of("parts", List.of(
+                                Map.of("text", prompt)
+                        ))
+                )
+        );
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(messageContent, headers);
+        String fullUrl = endpoint + "?key=" + apiKey;
+
+        ResponseEntity<String> response = restTemplate.postForEntity(fullUrl, entity, String.class);
+
         ObjectMapper mapper = new ObjectMapper();
-        JsonNode root = mapper.readTree(geminiResponse);
-        return root
-                .path("candidates")
-                .get(0)
-                .path("content")
-                .path("parts")
-                .get(0)
-                .path("text")
-                .asText();
+        JsonNode root = mapper.readTree(response.getBody());
+        JsonNode candidates = root.path("candidates");
+
+        if (!candidates.isArray() || candidates.isEmpty()) {
+            throw new Exception("Error: Gemini returned no candidates");
+        }
+
+        JsonNode content = candidates.get(0).path("content");
+        JsonNode parts = content.path("parts");
+
+        if (!parts.isArray() || parts.isEmpty()) {
+            throw new Exception("Error: Gemini response is missing parts");
+        }
+
+        String generatedText = parts.get(0).path("text").asText();
+
+        int jsonStart = generatedText.indexOf('{');
+        int jsonEnd = generatedText.lastIndexOf('}');
+        if (jsonStart == -1 || jsonEnd == -1 || jsonEnd <= jsonStart) {
+            throw new Exception("Error: Gemini response does not contain valid JSON structure");
+        }
+
+        String cleanedJson = generatedText.substring(jsonStart, jsonEnd + 1);
+        return mapper.readValue(cleanedJson, LearningGoalsPlan.class);
     }
+
+    private String buildLearningObjectivesPrompt(ConversationRequest req, String sessionId) {
+        return String.format("""
+        Ты — AI-модуль для создания плана тематической беседы на профессиональную тему "%s".
+        Учитывай при генерации также ключевые навыки: %s,
+
+        Сформируй структуру JSON с ключевыми учебными целями (learning objectives) и основными вопросами/подтемами для глубокого понимания темы.
+
+        Формат ответа - (строго JSON):
+        {
+          "sessionId": "%s",
+          "learningGoals": [
+            "Understand recursion",
+            "Explain call stack behavior",
+            "Differentiate recursion and iteration"
+          ]
+        }
+        """,
+                sessionId,
+                req.getTheme(),
+                String.join(", ", req.getKeySkills())
+        );
+    }
+
 
 }
