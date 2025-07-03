@@ -1,4 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
+import { fetchMessagesBySessionId } from "./storage/chat-storage";
+import { useSettingsStore } from "./store-settings";
 
 export type ChatMessage = {
   id: string;
@@ -15,13 +17,13 @@ export type Message = {
 const useChatStore = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
+  const { settings }= useSettingsStore()
 
   const fetchMessages = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8080/api/chat/history");
-      const data = await res.json();
-      setMessages(data);
+      const res = await fetchMessagesBySessionId(settings.activeSessionId);
+      setMessages(res);
     } catch (e) {
       console.error("Error fetching messages:", e);
       setMessages([]);

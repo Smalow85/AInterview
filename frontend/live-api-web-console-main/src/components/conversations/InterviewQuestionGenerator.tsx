@@ -3,6 +3,7 @@ import './InterviewQuestionGenerator.scss';
 import { useSettingsStore } from '../../lib/store-settings';
 import { InterviewPhase } from '../../types/interview-question';
 import { useInterviewQuestionsStore } from '../../lib/store-interview-question';
+import { randomUUID } from 'crypto';
 
 
 export interface InterviewRequest {
@@ -23,7 +24,7 @@ const InterviewQuestionGenerator = (props: { onClose: () => void }) => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showCloseButton, setShowCloseButton] = useState(false);
-    const { settings, updateSettings } = useSettingsStore();
+    const { settings, updateSettings, persistUpdates} = useSettingsStore();
     const { updateInterview } = useInterviewQuestionsStore();
     const sessionId = settings.activeSessionId;
     const { onClose } = props;
@@ -57,8 +58,9 @@ const InterviewQuestionGenerator = (props: { onClose: () => void }) => {
 
             const data = await response.json();
             setGeneratedQuestions(data.phases);
-            updateInterview({interviewLoaded: true})
-            updateSettings({sessionActive: true, sessionType: 'interview'});
+            updateInterview({phases: data.phases, position: jobTitle, interviewLoaded: true})
+            updateSettings({sessionActive: true, sessionType: 'interview', activeSessionId: crypto.randomUUID()});
+            persistUpdates(settings);
             setShowCloseButton(true);
         } catch (error) {
             console.log("Error:", error)

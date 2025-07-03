@@ -17,6 +17,7 @@
 import { create } from "zustand";
 import { ChatMessage } from "./store-chat";
 import { getCurrentUserSettingsAsync } from "./store-settings";
+import { fetchMessagesBySessionId, clearAllMessages } from "./storage/chat-storage";
 
 interface StoreChatState {
   maxLogs: number;
@@ -53,11 +54,7 @@ export const useLoggerStore = create<StoreChatState>((set) => ({
   fetchMessages: async () => {
     try {
       const user = await getCurrentUserSettingsAsync();
-      const response = await fetch(`http://localhost:8080/api/chat/history/${user.activeSessionId}`); 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data: ChatMessage[] = await response.json();
+      const data = await fetchMessagesBySessionId(user.activeSessionId)
       set({ messages: data, loading: false });
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -66,12 +63,7 @@ export const useLoggerStore = create<StoreChatState>((set) => ({
   },
   clearMessages: async () => {
     try {
-      const response = await fetch("http://localhost:8080/api/chat/history/clear", {
-        method: "DELETE"
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      await clearAllMessages();
       set({ messages: [], loading: false });
     } catch (error) {
       console.error('Error fetching messages:', error);

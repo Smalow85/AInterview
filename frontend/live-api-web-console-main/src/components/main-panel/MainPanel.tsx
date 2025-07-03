@@ -2,7 +2,7 @@ import { useLiveAPIContext } from "../../contexts/LiveAPIContext";
 import { useCallback, useEffect, useRef } from "react";
 import "./MainPanel.scss";
 import { useCardStore } from "../../lib/store-card";
-import { getCurrentUserSettingsAsync } from "../../lib/store-settings";
+import { getCurrentUserSettingsAsync, useSettingsStore } from "../../lib/store-settings";
 import ResponseCards from "./Cards";
 
 const userSettings = await getCurrentUserSettingsAsync();
@@ -11,6 +11,7 @@ const MainPanel = () => {
     const { client } = useLiveAPIContext();
     const cardsRef = useRef<HTMLDivElement>(null);
     const { addCard, updateCardInStore } = useCardStore();
+    const { settings } = useSettingsStore();
 
 
     const handleCardClick = useCallback((id: string) => {
@@ -19,7 +20,7 @@ const MainPanel = () => {
 
     useEffect(() => {
         useCardStore.getState().fetchCards(userSettings.activeSessionId);
-    }, []);
+    }, [settings]);
 
     useEffect(() => {
       client.on("cardAdded", addCard);

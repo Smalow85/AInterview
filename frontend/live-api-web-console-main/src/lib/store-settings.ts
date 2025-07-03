@@ -15,6 +15,7 @@
  */
 
 import { create } from "zustand";
+import { saveSettingsInDb, getSettings } from "./storage/settings-storage";
 import { UserSettings } from "../types/settings";
 
 interface SettingsState {
@@ -22,7 +23,7 @@ interface SettingsState {
   updateSettingsState: (settings: UserSettings) => void;
   updateSettings: (partialSettings: Partial<UserSettings>) => void; 
   persistUpdates: (settings: UserSettings) => void;
-  fetchSettings: () => Promise<UserSettings | undefined>;
+  fetchSettings: () => Promise<void>;
   settingsLoaded: boolean
 }
 
@@ -36,7 +37,6 @@ const defaultUserSettings: UserSettings = {
 };
 
 export const getCurrentUserSettingsAsync = async () => {
-  await useSettingsStore.getState().fetchSettings();
   return useSettingsStore.getState().settings;
 };
 
@@ -58,30 +58,16 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     }));
   },
   persistUpdates: async (settings) => {
-    const userId = 1;
-    const response = await fetch(`http://localhost:8080/api/settings/${userId}/save`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ ...settings }),
-    });
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const userId = defaultUserSettings.id;
+    await saveSettingsInDb(settings, userId);
   },
   fetchSettings: async () => {
     try {
       const userId = defaultUserSettings.id
-      const response = await fetch(`http://localhost:8080/api/settings/${userId}`); 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data: UserSettings = await response.json();
-      set({settings: data, settingsLoaded: true});
-      return data
+      const settings = await getSettings(userId);
+      set({ settings, settingsLoaded: true });
     } catch (error) {
       console.error('Error fetching messages:', error);
     }
-  }
+  },
 }));

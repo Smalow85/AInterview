@@ -55,7 +55,6 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
 
     private async handleTurnComplete() {
         const userSettings = await getCurrentUserSettingsAsync();
-
         if (this.accumulatedInputText) {
             await this.saveUserMessage(userSettings.activeSessionId, this.accumulatedInputText);
             this.lastUserAnswer = this.accumulatedInputText;
@@ -73,14 +72,11 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
     private async handleToolCall(toolCall: any) {
         console.log("Received tool call:", toolCall);
 
-        // Check if toolCall is an array
         if (Array.isArray(toolCall)) {
-            // Iterate through the array and process each tool call
             for (const call of toolCall) {
                 await this.processToolCall(call);
             }
         } else if (toolCall && toolCall.functionCalls && Array.isArray(toolCall.functionCalls)) {
-            // Check if toolCall has functionCalls property and it's an array
             for (const call of toolCall.functionCalls) {
                 await this.processToolCall(call);
             }
@@ -120,6 +116,17 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
                     functionResponse.response = await this.handleProvideFeedback(args);
                     break;
 
+                case "advance_themed_conversation":
+                    functionResponse.response = await this.handleAdvanceThemedConversation(args);
+                    break;
+
+                case "evaluate_themed_answer":
+                    functionResponse.response = await this.handleEvaluateThemedAnswer(args);
+                    break;
+
+                case "ask_challenging_question":
+                    functionResponse.response = await this.handleAskChallengingQuestion(args);
+                    break;
                 default:
                     console.warn(`Unknown function call: ${functionName}`);
                     functionResponse.response = {
@@ -245,10 +252,8 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         const userSettings = await getCurrentUserSettingsAsync();
         const questionText = args.question_text;
         const additionalContext = args.additional_context || "";
-
         this.saveQuestionCard(userSettings.activeSessionId, questionText);
 
-        // Помечаем, что вопрос был задан
         this.interviewBot.questionSent = true;
 
         return {
@@ -263,7 +268,6 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         const feedbackType = args.feedback_type;
         const message = args.message;
 
-        // Логируем feedback для аналитики
         console.log(`Feedback [${feedbackType}]: ${message}`);
 
         return {
@@ -274,7 +278,6 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         };
     }
 
-    // Метод для начала интервью с использованием tools
     public async startInterview() {
         if (!this.interviewBot.active) {
             this.interviewBot.active = true;
@@ -283,8 +286,8 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
             if (firstQuestion) {
                 await this.updateSystemInstructionForGemini(firstQuestion);
 
-                const welcomeMessage = `Привет! Начинаем техническое интервью на позицию ${this.interviewBot.position}. 
-                Интервью состоит из ${this.interviewBot.phases.length} фаз. 
+                const welcomeMessage = `Привет! Начинаем техническое интервью на позицию ${this.interviewBot.position}.
+                Интервью состоит из ${this.interviewBot.phases.length} фаз.
                 Используй функцию ask_question чтобы задать первый вопрос.`;
 
                 await this.send({ text: welcomeMessage }, true);
@@ -306,7 +309,8 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         const chatMessage: ChatMessage = {
             sender: 'user',
             message: message,
-            id: uuidv4()
+            id: uuidv4(),
+            sessionId: sessionId
         };
         this.emit('messageAdded', chatMessage);
     }
@@ -316,7 +320,8 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         const chatMessage: ChatMessage = {
             sender: 'bot',
             message: message,
-            id: uuidv4()
+            id: uuidv4(),
+            sessionId: sessionId
         };
         this.emit('messageAdded', chatMessage);
     }
@@ -412,35 +417,35 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
 
         if (newQuestion) {
             systemPrompt = `Ты — опытный технический интервьюер.
-            
+
             ДОСТУПНЫЕ ИНСТРУМЕНТЫ:
             - evaluate_answer: Оценивай каждый ответ кандидата
             - advance_interview: Переходи к следующему вопросу/фазе
             - ask_question: Задавай вопросы кандидату
             - provide_feedback: Давай обратную связь
-            
+
             АЛГОРИТМ РАБОТЫ:
             1. Получил ответ → вызови evaluate_answer
             2. Если нужны уточнения → provide_feedback с типом "clarification"
             3. Если ответ полный → advance_interview для следующего вопроса
             4. Новый вопрос → ask_question
-            
+
             ТЕКУЩИЕ ДАННЫЕ:
             - Позиция: ${this.interviewBot.position}
             - Текущая фаза: ${this.interviewBot.current_phase}
             - Текущий вопрос: ${newQuestion.text}
             - Ключевые слова: ${newQuestion.expectedKeywords.join(', ')}
             - Критерии оценки: ${newQuestion.evaluationCriteria.join(', ')}
-            
+
             ВАЖНО:
             - Всегда используй инструменты для управления интервью
             - Не задавай вопросы напрямую в тексте, используй ask_question
             - Оценивай каждый ответ через evaluate_answer
             - Будь дружелюбным и профессиональным
-            
+
             Начни с использования ask_question для текущего вопроса.`;
         } else {
-            systemPrompt = `Интервью завершено. Используй provide_feedback с типом "final_feedback" 
+            systemPrompt = `Интервью завершено. Используй provide_feedback с типом "final_feedback"
                           для финального фидбека кандидату.`;
         }
 
@@ -466,14 +471,48 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
             });
         }
 
-        // Даем время на финальный feedback через tool
         setTimeout(() => {
             this.disconnect();
         }, 10000);
     }
 
-    // Метод для проверки активности интервью
     public isInterviewActive(): boolean {
         return this.interviewBot.active;
     }
+
+    private async handleAdvanceThemedConversation(args: any): Promise<any> {
+        this.conversationBot.advance_to_next_question();
+        const curr_goal = this.conversationBot.get_current_goal()
+        if (curr_goal) {
+            await this.updateSystemInstructionForThemedConversation(curr_goal?.text);
+            console.log("current goal:", curr_goal);
+            return { status: "success", curr_goal };
+        }
+    }
+
+    private async handleEvaluateThemedAnswer(args: any): Promise<any> {
+        const evaluation = {
+            score: args.score,
+            relevance: args.relevance,
+            depth: args.depth,
+            nextAction: args.nextAction,
+        };
+        //this.conversationBot.saveEvaluation(evaluation);
+        return { status: "success", evaluation };
+    }
+
+    private async handleAskChallengingQuestion(args: any): Promise<any> {
+        const question = args.question;
+        await this.send({ text: question }, true);
+        return { status: "success", questionAsked: question };
+    }
+
+    private async updateSystemInstructionForThemedConversation(currentGoal: string) {
+        const systemPrompt = `Ты - эксперт по тематическим беседам. Текущая тема: ${currentGoal}.
+          Используй инструменты: evaluateThemedAnswer, advanceThemedConversation, askChallengingQuestion.`;
+
+        this.send({ text: `[SYSTEM_UPDATE] ${systemPrompt}` }, true);
+        console.log("Updated system instruction for themed conversation.");
+    }
 }
+

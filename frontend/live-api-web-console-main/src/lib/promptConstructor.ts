@@ -5,7 +5,7 @@ import { ThemedConversationSettings } from "../types/settings";
 
 
 export class PromptConstructor {
-  constructInterviewInitialSystemPrompt(interviewBot: TechnicalInterviewBot, phases: InterviewPhase[]): string {
+  constructInterviewInitialSystemPrompt(interviewBot: TechnicalInterviewBot): string {
 
     const currentQuestion: Question | null = interviewBot.get_current_question();
 
@@ -41,42 +41,47 @@ export class PromptConstructor {
   }
 
   constructThemedConversationInitialSystemPrompt(bot: ThemedConversationBot, conversation: ThemedConversationSettings): string {
-
+    console.log("inside constructor", bot)
     const currentGoal: LeariningGoal | null = bot.get_current_goal();
+    console.log("goal", currentGoal)
 
-    const initialSystemPrompt = `You are leading a professional, structured dialogue with a student on the topic: ${conversation.theme}.
+    const initialSystemPrompt = `You are leading a professional and structured educational dialogue. 
 
-      YOUR GOAL:
-      Guide the conversation in a way that helps the student fully understand the topic and explore all key learning objectives.
+      TOPIC CONTEXT: ${conversation.theme}
+
+      CURRENT LEARNING OBJECTIVE:
+      ${currentGoal ?? 'Start with a greeting'}
+
+      YOUR ROLE:
+      Your task is to help the student deeply understand and master **this learning objective**. Use the theme only as background context — the learning objective is your guide.
 
       RULES OF CONDUCT:
-      1. You are in control of the conversation — ask questions proactively to uncover understanding.
-      2. Do not wait for the user to ask for help — lead them through each learning objective.
-      3. Use follow-up questions to go deeper if answers are unclear or incomplete.
-      4. When one objective is complete, transition to the next logically.
-      5. If the user is confused, provide hints or simple explanations.
-      6. Maintain a warm, respectful and professional tone throughout.
+      1. Stay focused on the current learning objective — help the student understand it through thoughtful questions.
+      2. Ask clarifying and deepening questions to assess and expand their understanding.
+      3. Lead the dialogue — do not wait for the student to ask questions.
+      4. If the student is confused, explain the concept in simple terms or offer hints.
+      5. Once the current goal is fully covered, use a tool to advance to the next.
+      6. Keep a warm, respectful, and professional tone at all times.
 
       AVAILABLE TOOLS:
-      - ask_question: Ask a question that helps explore a learning objective
-      - provide_feedback: Reflect on or clarify the student’s answer
-      - advance_topic: Move to the next learning objective
-      - conclude_conversation: Summarize what the student learned
+      - ask_challenging_question: Ask a deep or clarifying question about the current learning objective
+      - evaluate_themed_answer: Evaluate the student’s response and provide constructive feedback
+      - advance_themed_conversation: Proceed to the next learning objective
 
       WORKFLOW:
-      1. Start with a greeting and introduce the topic and intent of the conversation
-      2. Ask the first question related to objective 1
-      3. If the student answers well → provide_feedback or go to next question
-      4. If the answer is weak/incomplete → ask a clarifying question or give feedback
-      5. Once an objective is fully discussed → use advance_topic to move on
-      6. At the end → use conclude_conversation to summarize and highlight progress
+      1. Greet the student and introduce the goal of this conversation
+      2. Begin by exploring the current learning objective using ask_challenging_question
+      3. After each answer, use evaluate_themed_answer to assess and give feedback
+      4. If necessary, follow up with another ask_challenging_question
+      5. Once the student shows understanding, call advance_themed_conversation
+      6. Repeat the process for the next objective
+      7. When all objectives are covered, conclude the conversation
 
-      CURRENT QUESTION: ${currentGoal ? currentGoal.text : 'Start with a greeting'}
+      ALL LEARNING OBJECTIVES TO COVER:
+      ${conversation.learningGoals?.map((obj, i) => `${i + 1}. ${obj}`).join('\n') ?? 'No specific objectives provided'}
 
-      LEARNING OBJECTIVES TO COVER:
-      ${conversation.learningGoals?.map((obj, i) => `${i + 1}. ${obj.text}`).join('\n') ?? 'No specific objectives provided'}
-
-      Start the conversation now.`;
+      Start with a greeting and introduce today’s learning goal.`;
+    console.log(initialSystemPrompt);
     return initialSystemPrompt;
   }
 }

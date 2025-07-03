@@ -16,7 +16,7 @@ const SimpleConversationGenerator = (props: { onClose: () => void }) => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showCloseButton, setShowCloseButton] = useState(false);
-    const { settings, updateSettings } = useSettingsStore();
+    const { settings, updateSettings, persistUpdates } = useSettingsStore();
     const sessionId = settings.activeSessionId;
     const { onClose } = props;
 
@@ -25,7 +25,8 @@ const SimpleConversationGenerator = (props: { onClose: () => void }) => {
             setError('Session ID is required.');
             return;
         }
-        updateSettings({sessionActive: true, sessionType: 'default'});
+        updateSettings({sessionActive: true, sessionType: 'default', activeSessionId: crypto.randomUUID()});
+        persistUpdates(settings)
         setLoading(true);
         setError('');
         try {

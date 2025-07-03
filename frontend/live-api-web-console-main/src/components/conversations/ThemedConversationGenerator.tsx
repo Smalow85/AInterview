@@ -17,7 +17,7 @@ const ThemedConversationGenerator = (props: { onClose: () => void }) => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showCloseButton, setShowCloseButton] = useState(false);
-    const { settings, updateSettings } = useSettingsStore();
+    const { settings, updateSettings, persistUpdates } = useSettingsStore();
     const sessionId = settings.activeSessionId;
     const { updateConversation } = useThemedConversationStore();
     const { onClose } = props;
@@ -46,10 +46,11 @@ const ThemedConversationGenerator = (props: { onClose: () => void }) => {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
+            const data = await response.json(); 
             setGeneratedQuestions(data.learningGoals);
             updateConversation({ theme: theme, learningGoals: data.learningGoals, conversationLoaded: true})
-            updateSettings({sessionActive: true, sessionType: 'themed_interview'});
+            updateSettings({sessionActive: true, sessionType: 'themed_interview', activeSessionId: crypto.randomUUID()});
+            persistUpdates(settings)
             setShowCloseButton(true);
         } catch (error) {
             console.log("Error:", error)

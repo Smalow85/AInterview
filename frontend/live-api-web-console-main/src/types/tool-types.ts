@@ -102,3 +102,75 @@ export const provide_feedback: FunctionDeclaration = {
     required: ["feedback_type", "message"]
   }
 };
+
+export const advanceThemedConversation: FunctionDeclaration = {
+  name: "advance_themed_conversation",
+  description: "Перейти к следующему этапу тематической беседы",
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      nextTopic: {
+        type: Type.STRING,
+        description: "Тема следующего этапа беседы"
+      },
+      reason: {
+        type: Type.STRING,
+        description: "Причина перехода к следующей теме"
+      }
+    },
+    required: ["nextTopic"]
+  }
+};
+
+export const evaluateThemedAnswer: FunctionDeclaration = {
+  name: "evaluate_themed_answer",
+  description: "Оценить ответ на вопрос в тематической беседе",
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      score: {
+        type: Type.NUMBER,
+        description: "Оценка ответа (0-10)",
+        minimum: 0,
+        maximum: 10
+      },
+      relevance: {
+        type: Type.NUMBER,
+        description: "Релевантность ответа теме (0-1)",
+        minimum: 0,
+        maximum: 1
+      },
+      depth: {
+        type: Type.NUMBER,
+        description: "Глубина ответа (0-1)",
+        minimum: 0,
+        maximum: 1
+      },
+      nextAction: {
+        type: Type.STRING,
+        enum: ["continue", "askFollowUp", "changeTopic"],
+        description: "Следующее действие: продолжить, задать уточняющий вопрос, изменить тему"
+      }
+    },
+    required: ["score", "relevance", "depth", "nextAction"]
+  }
+};
+
+export const askChallengingQuestion: FunctionDeclaration = {
+  name: "ask_challenging_question",
+  description: "Задать сложный вопрос для углубления обсуждения",
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      question: {
+        type: Type.STRING,
+        description: "Текст сложного вопроса"
+      },
+      topic: {
+        type: Type.STRING,
+        description: "Тема сложного вопроса"
+      }
+    },
+    required: ["question"]
+  }
+};

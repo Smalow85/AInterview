@@ -11,6 +11,7 @@ import ResponseModalitySelector from "./ResponseModalitySelector";
 import VoiceSelector from "./VoiceSelector";
 import { useSettingsStore } from "../../lib/store-settings";
 import { UserSettings } from "../../types/settings";
+import { saveSettingsInDb } from "../../lib/storage/settings-storage";
 
 const fieldLabels: {[key in keyof EditableUserSettings]: string} = {
   firstName: "First Name",
@@ -35,17 +36,8 @@ export default function SettingsDialog() {
   const saveSettings = useCallback(async () => {
     try {
       const userId = 1;
-      const response = await fetch(`http://localhost:8080/api/settings/${userId}/save`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ ...settings }),
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data: UserSettings = await response.json();
+      const data: UserSettings = await saveSettingsInDb(settings, userId);
+      console.log(data)
       setConfig({ ...config, systemInstruction: data.systemInstruction });
       updateSettingsState(data)
       setOpen(false);

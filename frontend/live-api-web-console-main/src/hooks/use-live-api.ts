@@ -25,7 +25,15 @@ import { useSettingsStore } from "../lib/store-settings";
 import { PromptConstructor } from "../lib/promptConstructor";
 import { useThemedConversationStore } from "../lib/store-conversation";
 import { useInterviewQuestionsStore } from "../lib/store-interview-question";
-import { advance_interview_declaration, ask_question, evaluate_answer_declaration, provide_feedback } from "../types/tool-types";
+import {
+  advance_interview_declaration,
+  ask_question,
+  evaluate_answer_declaration,
+  provide_feedback,
+  advanceThemedConversation,
+  evaluateThemedAnswer,
+  askChallengingQuestion
+} from "../types/tool-types";
 
 export type UseLiveAPIResults = {
   client: EnhancedGenAILiveClient;
@@ -78,12 +86,15 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
     console.log(settings)
     var initialSystemPrompt = null;
     if (settings.sessionType === 'interview') {
+      console.log("interview", interview)
       interviewBot._initializeInterviewStructure(interview)
-      initialSystemPrompt = promptConstructor.constructInterviewInitialSystemPrompt(interviewBot, interview.phases);
+      initialSystemPrompt = promptConstructor.constructInterviewInitialSystemPrompt(interviewBot);
+      console.log(interviewBot)
     }
     if (settings.sessionType === 'themed_interview') {
       console.log('theme', themedConversation)
       conversationBot._initializeThemedConversationStructure(themedConversation.learningGoals, themedConversation.theme)
+      console.log(conversationBot);
       initialSystemPrompt = promptConstructor.constructThemedConversationInitialSystemPrompt(conversationBot, themedConversation);
     }
     setConfig({
@@ -102,7 +113,16 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
       //sessionResumption: { handle: settings.resumptionToken },
       tools: [
         { googleSearch: {} },
-        { functionDeclarations: [evaluate_answer_declaration, advance_interview_declaration, ask_question, provide_feedback] },
+        {
+          functionDeclarations: [evaluate_answer_declaration,
+            advance_interview_declaration,
+            ask_question,
+            provide_feedback,
+            advanceThemedConversation,
+            evaluateThemedAnswer,
+            askChallengingQuestion
+          ]
+        },
       ],
     });
   }

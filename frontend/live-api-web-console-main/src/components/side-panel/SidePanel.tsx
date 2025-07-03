@@ -3,7 +3,6 @@ import { useLiveAPIContext } from "../../contexts/LiveAPIContext";
 import Logger from "../logger/Logger";
 import "./side-panel.scss";
 import { useLoggerStore } from "../../lib/store-logger";
-import { v4 as uuidv4 } from 'uuid';
 import { useSettingsStore } from "../../lib/store-settings";
 import { getCurrentUserSettingsAsync } from "../../lib/store-settings";
 import InterviewQuestionGenerator from "../conversations/InterviewQuestionGenerator";

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useCardStore } from "../../lib/store-card";
 import CardModal from "./CardModal";
 import "./Cards.scss";
 import EmptyState from './EmptyState';
+import { useSettingsStore } from '../../lib/store-settings';
 
 interface ResponseCardsProps {
   onCardClick?: (id: string) => void;
