@@ -34,15 +34,15 @@ public class GeminiService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    public Map<String, Object> askGemini(String prompt, String jobTitle) {
+    public Map<String, Object> askGemini(String prompt) {
         try {
-            return sendGeminiRequest(jobTitle, prompt);
+            return sendGeminiRequest(prompt);
         } catch (Exception e) {
             return Map.of("error", e.getMessage());
         }
     }
 
-    private Map<String, Object> sendGeminiRequest(String jobTitle, String promptText) {
+    private Map<String, Object> sendGeminiRequest(String promptText) {
         try {
             // Prepare the prompt with context
             StringBuilder promptBuilder = new StringBuilder();
@@ -50,7 +50,6 @@ public class GeminiService {
             promptBuilder.append("You are an AI assistant helping conduct technical interviews.  Answer this question as a senior Java developer would. Use a structured approach: definition → key features → code example → use cases. If you have good and useful answer, generate a JSON response containing the card; otherwise, respond with an empty JSON object (`{}`).\n\n");
 
             promptBuilder.append("Question:\n").append(promptText).append("\n");
-            promptBuilder.append("Interview Position:\n").append(jobTitle).append("\n");
 
             promptBuilder.append("Card Generation Criteria:\n");
             promptBuilder.append("Your answer should provide concise supplemental information to help the candidate check his or her answer for correctness and completeness.\n");
@@ -58,8 +57,6 @@ public class GeminiService {
             promptBuilder.append("JSON Structure:\n");
             promptBuilder.append("```json\n");
             promptBuilder.append("{\n");
-            promptBuilder.append("  \"generateCard\": true, // Set to false if no card is needed\n");
-            promptBuilder.append("  \"card\": {\n");
             promptBuilder.append("  \"tags\": [\"...\"],\n");
             promptBuilder.append("  \"data\": \"...\",\n");
             promptBuilder.append("  \"header\": \"...\",\n");
@@ -70,11 +67,8 @@ public class GeminiService {
             promptBuilder.append("      \"code\": \"...\"\n");
             promptBuilder.append("    }\n");
             promptBuilder.append("  ]\n");
-            promptBuilder.append("  }\n");
             promptBuilder.append("}\n");
             promptBuilder.append("```\n");
-
-
 
             String prompt = promptBuilder.toString();
 
@@ -175,7 +169,7 @@ public class GeminiService {
         }
         finalPrompt.append("\nQuestion: ").append(prompt);
 
-        return askGemini(finalPrompt.toString(), "user").toString();
+        return askGemini(finalPrompt.toString()).toString();
     }
 
     public InterviewPlan generateInterviewPlan(InterviewQestionRequest request) throws Exception {

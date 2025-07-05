@@ -252,7 +252,7 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         const userSettings = await getCurrentUserSettingsAsync();
         const questionText = args.question_text;
         const additionalContext = args.additional_context || "";
-        this.saveQuestionCard(userSettings.activeSessionId, questionText);
+        this.addQuestionCard(userSettings.activeSessionId, questionText);
 
         this.interviewBot.questionSent = true;
 
@@ -305,7 +305,6 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
     }
 
     private async saveUserMessage(sessionId: string, message: string) {
-        await this.saveMessageToDatabase({ sessionId, sender: 'user', message });
         const chatMessage: ChatMessage = {
             sender: 'user',
             message: message,
@@ -316,7 +315,6 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
     }
 
     private async saveBotMessage(sessionId: string, message: string) {
-        await this.saveMessageToDatabase({ sessionId, sender: 'bot', message });
         const chatMessage: ChatMessage = {
             sender: 'bot',
             message: message,
@@ -326,11 +324,11 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         this.emit('messageAdded', chatMessage);
     }
 
-    private async saveQuestionCard(sessionId: string, questionText: string) {
-        const res = await this.saveCardToDatabase({
-            sessionId,
-            sender: 'bot',
-            message: questionText
+    private async addQuestionCard(sessionId: string, text: string) {
+        console.log(text)
+        const res = await this.getCard({
+            sessionId: sessionId,
+            text: text
         });
 
         if (res?.status !== 204 && res?.data) {
@@ -349,27 +347,8 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         }
     }
 
-    async saveMessageToDatabase(messageData: { sessionId: string; sender: string; message: string }) {
-        try {
-            const response = await fetch('http://localhost:8080/api/chat/save', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(messageData)
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                const errorMessage = errorData.message || `HTTP error! status: ${response.status}`;
-                throw new Error(errorMessage);
-            }
-        } catch (error) {
-            console.error('Error saving message to database:', error);
-        }
-    }
-
-    async saveCardToDatabase(cardData: { sessionId: string; sender: string; message: string }) {
+    async getCard(cardData: { sessionId: string; text: string }) {
+        console.log(cardData)
         try {
             const response = await fetch('http://localhost:8080/api/chat/ask', {
                 method: 'POST',
@@ -462,30 +441,19 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         const finalReport = this.interviewBot.generate_final_report();
         console.log("Final Interview Report:", finalReport);
 
-        const userSettings = await getCurrentUserSettingsAsync();
-        if (userSettings.activeSessionId) {
-            await this.saveMessageToDatabase({
-                sessionId: userSettings.activeSessionId,
-                sender: 'system',
-                message: `Interview completed. Final report: ${JSON.stringify(finalReport)}`
-            });
-        }
-
         setTimeout(() => {
             this.disconnect();
         }, 10000);
-    }
-
-    public isInterviewActive(): boolean {
-        return this.interviewBot.active;
     }
 
     private async handleAdvanceThemedConversation(args: any): Promise<any> {
         this.conversationBot.advance_to_next_question();
         const curr_goal = this.conversationBot.get_current_goal()
         if (curr_goal) {
-            await this.updateSystemInstructionForThemedConversation(curr_goal?.text);
-            console.log("current goal:", curr_goal);
+            await this.updateSystemInstructionForThemedConversation(curr_goal);
+            const userSettings = await getCurrentUserSettingsAsync();
+            console.log(curr_goal);
+            this.addQuestionCard(userSettings.activeSessionId, curr_goal);
             return { status: "success", curr_goal };
         }
     }
@@ -503,7 +471,7 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
 
     private async handleAskChallengingQuestion(args: any): Promise<any> {
         const question = args.question;
-        await this.send({ text: question }, true);
+        this.send({ text: question }, true);
         return { status: "success", questionAsked: question };
     }
 

@@ -17,7 +17,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EnhancedGenAILiveClient } from "../lib/enhanced-genai-live-client";
 import { LiveClientOptions } from "../types";
-import { LiveConnectConfig, StartSensitivity, EndSensitivity, LiveServerToolCall } from "@google/genai";
+import { LiveConnectConfig, StartSensitivity, EndSensitivity, LiveServerToolCall, FunctionDeclaration } from "@google/genai";
 import { AudioStreamer } from "../lib/audio-streamer";
 import { audioContext } from "../lib/utils";
 import VolMeterWorket from "../lib/worklets/vol-meter";
@@ -86,45 +86,62 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
     console.log(settings)
     var initialSystemPrompt = null;
     if (settings.sessionType === 'interview') {
-      console.log("interview", interview)
       interviewBot._initializeInterviewStructure(interview)
       initialSystemPrompt = promptConstructor.constructInterviewInitialSystemPrompt(interviewBot);
-      console.log(interviewBot)
+      setConfig({
+        systemInstruction: initialSystemPrompt || settings.systemInstruction,
+        inputAudioTranscription: { enabled: true },
+        outputAudioTranscription: { enabled: true },
+        realtimeInputConfig: {
+          automaticActivityDetection: {
+            disabled: false,
+            startOfSpeechSensitivity: StartSensitivity.START_SENSITIVITY_LOW,
+            endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_LOW,
+            prefixPaddingMs: 30,
+            silenceDurationMs: 300,
+          }
+        },
+        //sessionResumption: { handle: settings.resumptionToken },
+        tools: [
+          { googleSearch: {} },
+          {
+            functionDeclarations: [
+              evaluate_answer_declaration,
+              advance_interview_declaration,
+              ask_question,
+              provide_feedback]
+          },
+        ],
+      });
     }
     if (settings.sessionType === 'themed_interview') {
-      console.log('theme', themedConversation)
       conversationBot._initializeThemedConversationStructure(themedConversation.learningGoals, themedConversation.theme)
-      console.log(conversationBot);
       initialSystemPrompt = promptConstructor.constructThemedConversationInitialSystemPrompt(conversationBot, themedConversation);
-    }
-    setConfig({
-      systemInstruction: initialSystemPrompt || settings.systemInstruction,
-      inputAudioTranscription: { enabled: true },
-      outputAudioTranscription: { enabled: true },
-      realtimeInputConfig: {
-        automaticActivityDetection: {
-          disabled: false,
-          startOfSpeechSensitivity: StartSensitivity.START_SENSITIVITY_LOW,
-          endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_LOW,
-          prefixPaddingMs: 30,
-          silenceDurationMs: 300,
-        }
-      },
-      //sessionResumption: { handle: settings.resumptionToken },
-      tools: [
-        { googleSearch: {} },
-        {
-          functionDeclarations: [evaluate_answer_declaration,
-            advance_interview_declaration,
-            ask_question,
-            provide_feedback,
-            advanceThemedConversation,
-            evaluateThemedAnswer,
-            askChallengingQuestion
-          ]
+      console.log(initialSystemPrompt);
+      setConfig({
+        systemInstruction: initialSystemPrompt || settings.systemInstruction,
+        inputAudioTranscription: { enabled: true },
+        outputAudioTranscription: { enabled: true },
+        realtimeInputConfig: {
+          automaticActivityDetection: {
+            disabled: false,
+            startOfSpeechSensitivity: StartSensitivity.START_SENSITIVITY_LOW,
+            endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_LOW,
+            prefixPaddingMs: 30,
+            silenceDurationMs: 300,
+          }
         },
-      ],
-    });
+        //sessionResumption: { handle: settings.resumptionToken },
+        tools: [
+          { googleSearch: {} },
+          {
+            functionDeclarations: [advanceThemedConversation,
+                                  evaluateThemedAnswer,
+                                  askChallengingQuestion]
+          },
+        ],
+      });
+    }
   }
 
   const connectWithConfig = async () => {
@@ -156,6 +173,7 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
       if (settingsLoaded || settings.sessionActive) {
         try {
           await setupLiveAPIConfig();
+          console.log(config);
           await connectWithConfig();
         } catch (error) {
           console.error("Error setting up Live API config:", error);
@@ -164,7 +182,7 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
       }
     };
     connectToLiveAPI();
-  }, [settings, themedConversation, interview]);
+  }, [settings.sessionActive, themedConversation, interview]);
 
   useEffect(() => {
     const onOpen = () => {

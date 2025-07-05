@@ -15,9 +15,9 @@
  */
 
 import { create } from "zustand";
-import { ChatMessage } from "./store-chat";
+import { ChatMessage } from "../types/chat-message";
 import { getCurrentUserSettingsAsync } from "./store-settings";
-import { fetchMessagesBySessionId, clearAllMessages } from "./storage/chat-storage";
+import { fetchMessagesBySessionId, saveMessageToDB, clearMessagesBySessionId } from "./storage/chat-storage";
 
 interface StoreChatState {
   maxLogs: number;
@@ -32,7 +32,8 @@ export const useLoggerStore = create<StoreChatState>((set) => ({
   maxLogs: 4,
   messages: [],
   loading: true,
-  addMessage: (chatMessage) => {
+  addMessage: async (chatMessage) => {
+    await saveMessageToDB(chatMessage);
     set((state) => {
       const prevLog = state.messages.at(-1);
       if (prevLog && prevLog.message === chatMessage.message) {
@@ -53,8 +54,9 @@ export const useLoggerStore = create<StoreChatState>((set) => ({
   },
   fetchMessages: async () => {
     try {
-      const user = await getCurrentUserSettingsAsync();
-      const data = await fetchMessagesBySessionId(user.activeSessionId)
+      const settings = await getCurrentUserSettingsAsync();
+      console.log(settings);
+      const data = await fetchMessagesBySessionId(settings.activeSessionId)
       set({ messages: data, loading: false });
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -63,7 +65,8 @@ export const useLoggerStore = create<StoreChatState>((set) => ({
   },
   clearMessages: async () => {
     try {
-      await clearAllMessages();
+      const settings = await getCurrentUserSettingsAsync();
+      await clearMessagesBySessionId(settings.activeSessionId);
       set({ messages: [], loading: false });
     } catch (error) {
       console.error('Error fetching messages:', error);

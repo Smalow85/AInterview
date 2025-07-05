@@ -1,5 +1,5 @@
 import { TechnicalInterviewBot } from "../types/interview-types";
-import { InterviewPhase, LeariningGoal, Question } from "../types/interview-question";
+import { Question } from "../types/interview-question";
 import { ThemedConversationBot } from "../types/themed-conversation-types";
 import { ThemedConversationSettings } from "../types/settings";
 
@@ -42,7 +42,7 @@ export class PromptConstructor {
 
   constructThemedConversationInitialSystemPrompt(bot: ThemedConversationBot, conversation: ThemedConversationSettings): string {
     console.log("inside constructor", bot)
-    const currentGoal: LeariningGoal | null = bot.get_current_goal();
+    const currentGoal: string | null = bot.get_current_goal();
     console.log("goal", currentGoal)
 
     const initialSystemPrompt = `You are leading a professional and structured educational dialogue. 

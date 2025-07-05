@@ -4,18 +4,18 @@ import Logger from "../logger/Logger";
 import "./side-panel.scss";
 import { useLoggerStore } from "../../lib/store-logger";
 import { useSettingsStore } from "../../lib/store-settings";
-import { getCurrentUserSettingsAsync } from "../../lib/store-settings";
 import InterviewQuestionGenerator from "../conversations/InterviewQuestionGenerator";
 import SimpleConversationGenerator from "../conversations/SimpleConverationGenerator";
 import ThemedConversationGenerator from "../conversations/ThemedConversationGenerator";
 import Modal from "../main-panel/Modal";
+import { fetchMessagesBySessionId } from "../../lib/storage/chat-storage";
 
 export default function SidePanel() {
   const { client } = useLiveAPIContext();
   const loggerRef = useRef<HTMLDivElement>(null);
   const loggerLastHeightRef = useRef<number>(-1);
   const { messages, addMessage, clearMessages } = useLoggerStore();
-  const { settings } = useSettingsStore();
+  const { settings, updateSettings } = useSettingsStore();
 
   const [showInterviewGenerator, setShowInterviewGenerator] = useState(false);
   const [showThemedConsultationGenerator, setShowThemedConsultationGenerator] = useState(false);
@@ -47,25 +47,9 @@ export default function SidePanel() {
   };
 
   const handleEndConversation = async () => {
-    const user = await getCurrentUserSettingsAsync()
-    if (user.activeSessionId) {
-      try {
-        const response = await fetch(`/analyze?sessionId=${user.activeSessionId}`, {
-          method: 'POST',
-        });
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        console.log("Analysis results:", data);
-      } catch (error) {
-        console.error("Error analyzing conversation:", error);
-      }
-    } else {
-      console.log("No active conversation to end.");
-    }
+    updateSettings({sessionActive: true, sessionType: 'default', activeSessionId: undefined});
   };
-
+  
   useEffect(() => {
     if (loggerRef.current) {
       const el = loggerRef.current;

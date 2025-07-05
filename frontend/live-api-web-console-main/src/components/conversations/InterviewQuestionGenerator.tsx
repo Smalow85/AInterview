@@ -3,7 +3,6 @@ import './InterviewQuestionGenerator.scss';
 import { useSettingsStore } from '../../lib/store-settings';
 import { InterviewPhase } from '../../types/interview-question';
 import { useInterviewQuestionsStore } from '../../lib/store-interview-question';
-import { randomUUID } from 'crypto';
 
 
 export interface InterviewRequest {
@@ -24,19 +23,15 @@ const InterviewQuestionGenerator = (props: { onClose: () => void }) => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showCloseButton, setShowCloseButton] = useState(false);
-    const { settings, updateSettings, persistUpdates} = useSettingsStore();
+    const { updateSettings } = useSettingsStore();
     const { updateInterview } = useInterviewQuestionsStore();
-    const sessionId = settings.activeSessionId;
     const { onClose } = props;
 
     const handleGenerate = async () => {
-        if (!sessionId) {
-            setError('Session ID is required.');
-            return;
-        }
         setLoading(true);
         setError('');
         try {
+            const sessionId = crypto.randomUUID();
             const requestBody: InterviewRequest = {
                 sessionId,
                 jobTitle,
@@ -44,7 +39,7 @@ const InterviewQuestionGenerator = (props: { onClose: () => void }) => {
                 resumeContent,
                 keySkills,
             };
-            const response = await fetch(`http://localhost:8080/api/interview-questions/interview-plan/${sessionId}`, {
+            const response = await fetch(`http://localhost:8080/api/interview-plan/${sessionId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -58,9 +53,8 @@ const InterviewQuestionGenerator = (props: { onClose: () => void }) => {
 
             const data = await response.json();
             setGeneratedQuestions(data.phases);
-            updateInterview({phases: data.phases, position: jobTitle, interviewLoaded: true})
-            updateSettings({sessionActive: true, sessionType: 'interview', activeSessionId: crypto.randomUUID()});
-            persistUpdates(settings);
+            updateInterview({phases: data.phases, position: jobTitle, interviewLoaded: true});
+            updateSettings({sessionActive: true, sessionType: 'interview', activeSessionId: sessionId});
             setShowCloseButton(true);
         } catch (error) {
             console.log("Error:", error)

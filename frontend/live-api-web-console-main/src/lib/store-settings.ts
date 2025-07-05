@@ -21,22 +21,23 @@ import { UserSettings } from "../types/settings";
 interface SettingsState {
   settings: UserSettings;
   updateSettingsState: (settings: UserSettings) => void;
-  updateSettings: (partialSettings: Partial<UserSettings>) => void; 
+  updateSettings: (partialSettings: Partial<UserSettings>) => void;
   persistUpdates: (settings: UserSettings) => void;
   fetchSettings: () => Promise<void>;
   settingsLoaded: boolean
 }
 
 const defaultUserSettings: UserSettings = {
-    id: 1,
-    firstName: 'Evgeny',
-    lastName: 'Kononov',
-    activeSessionId: '1234567890',
-    systemInstruction: 'You are helpful assistant',
-    sessionActive: false
+  id: 1,
+  firstName: 'Evgeny',
+  lastName: 'Kononov',
+  activeSessionId: '',
+  systemInstruction: 'You are helpful assistant',
+  sessionActive: false
 };
 
-export const getCurrentUserSettingsAsync = async () => {
+export const getCurrentUserSettingsAsync = async (): Promise<UserSettings> => {
+  await useSettingsStore.getState().fetchSettings(); // Wait for settings to load
   return useSettingsStore.getState().settings;
 };
 
@@ -48,14 +49,16 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   sessionActive: false,
   updateSettingsState: (settings) => {
     set((state) => ({
-        ...state.settings, settings: settings,
+      ...state.settings, settings: settings,
     }));
   },
-  updateSettings: (partialSettings: Partial<UserSettings>) => { 
-    console.log(partialSettings);//Updated type
-    set((state) => ({
-      settings: { ...state.settings, ...partialSettings }, // Merge settings
-    }));
+  updateSettings: async (partialSettings: Partial<UserSettings>) => {
+    console.log(partialSettings);
+    set((state) => {
+      const updatedSettings = { ...state.settings, ...partialSettings };
+      saveSettingsInDb(updatedSettings, updatedSettings.id);
+      return { settings: updatedSettings };
+    });
   },
   persistUpdates: async (settings) => {
     const userId = defaultUserSettings.id;
@@ -64,10 +67,19 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   fetchSettings: async () => {
     try {
       const userId = defaultUserSettings.id
-      const settings = await getSettings(userId);
+      let settings = await getSettings(userId);
+
+      if (isEmpty(settings)) { // Check if settings are empty
+        settings = defaultUserSettings;  // Use default settings
+        await saveSettingsInDb(settings, userId); // Save default settings
+      }
       set({ settings, settingsLoaded: true });
     } catch (error) {
       console.error('Error fetching messages:', error);
     }
   },
 }));
+
+const isEmpty = (obj: any): boolean => {
+  return Object.keys(obj).length === 0;
+};

@@ -16,13 +16,14 @@
 
 import { create } from "zustand";
 import { ResponseCard } from "../types/response-card";
+import { saveCardsToDB, fetchCardsBySessionId, clearCardsBySessionId } from "./storage/card-storage";
 
 interface StoreCardState {
   maxCards: number;
   cards: ResponseCard[];
   addCard: (card: ResponseCard) => void;
-  clearCards: () => Promise<void>;
-  fetchCards: (userId: string) => Promise<void>;
+  clearCards: (sesionId: string) => Promise<void>;
+  fetchCards: (sesionId: string) => Promise<void>;
   loading: boolean;
   updateCardInStore: (id: string) => void;
 }
@@ -32,6 +33,7 @@ export const useCardStore = create<StoreCardState>((set) => ({
   cards: [],
   loading: true,
   addCard: (card) => {
+    saveCardsToDB(card);
     set((state) => {
       const prevLog = state.cards.at(-1);
       if (prevLog && prevLog.data === card.data) {
@@ -52,26 +54,17 @@ export const useCardStore = create<StoreCardState>((set) => ({
   },
   fetchCards: async (sesionId) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/chat/card-history/${sesionId}`); 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data: ResponseCard[] = await response.json();
-      console.log(data)
-      set({ cards: data, loading: false });
+      const response = await fetchCardsBySessionId(sesionId);
+      console.log(response)
+      set({ cards: response, loading: false });
     } catch (error) {
       console.error('Error fetching messages:', error);
       set({ loading: false });
     }
   },
-  clearCards: async () => {
+  clearCards: async (sesionId) => {
     try {
-      const response = await fetch("http://localhost:8080/api/chat/history/clear", {
-        method: "DELETE"
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      clearCardsBySessionId(sesionId);
       set({ cards: [], loading: false });
     } catch (error) {
       console.error('Error fetching messages:', error);

@@ -37,60 +37,27 @@ public class ChatController {
 
     @PostMapping("/ask")
     public ResponseEntity<ResponseCard> sendMessage(@RequestBody ChatRequest request) {
-        Map<String, Object> botReply = geminiService.askGemini(request.getMessage(), request.getJobTitle());
+        Map<String, Object> botReply = geminiService.askGemini(request.getText());
         return getResponseCardResponseEntity(request, botReply);
     }
 
     @PostMapping("/ask-with-context")
     public ResponseEntity<ResponseCard> sendMessageWithContext(@RequestBody ChatRequest request) {
-        Map<String, Object> botReply = enhancedGeminiService.askGeminiWithEmbeddings(request.getMessage());
+        Map<String, Object> botReply = enhancedGeminiService.askGeminiWithEmbeddings(request.getText());
         return getResponseCardResponseEntity(request, botReply);
     }
 
     @NotNull
     private ResponseEntity<ResponseCard> getResponseCardResponseEntity(ChatRequest request, Map<String, Object> botReply) {
-        if ((boolean) botReply.get("generateCard")) {
-            ResponseCard card = new ResponseCard();
-            Map<String, Object> cardMap = (Map<String, Object>) botReply.get("card");
-            card.setData((String) cardMap.get("data"));
-            card.setSessionId(request.getSessionId());
-            card.setHeader((String) cardMap.get("header"));
-            card.setTags((List<String>) cardMap.getOrDefault("tags", new ArrayList<>()));
-            card.setSummary((String) cardMap.get("summary"));
-            card.setCreated(LocalDateTime.now());
-            card.setSender(request.getJobTitle());
-            cardRepository.save(card);
-            return ResponseEntity.ok(card);
-        } else {
-            return ResponseEntity.noContent().build();
-        }
-    }
-
-    @PostMapping("/save")
-    public ResponseEntity<ChatResponse> saveMessage(@RequestBody ChatRequest request) {
-        ChatMessage message = new ChatMessage();
-        message.setSessionId(request.getSessionId());
-        message.setSender(request.getJobTitle());
-        message.setMessage(request.getMessage());
-        message.setCreated(LocalDateTime.now());
-        repository.save(message);
-
-        return ResponseEntity.ok(new ChatResponse(message.getMessage()));
-    }
-
-    @GetMapping("/history/{sessionId}")
-    public List<ChatMessage> getHistory(@PathVariable String sessionId) {
-        return repository.findBySessionId(sessionId);
-    }
-
-    @GetMapping("/card-history/{sessionId}")
-    public List<ResponseCard> getCards(@PathVariable String sessionId) {
-        return cardRepository.findBySessionId(sessionId);
-    }
-
-    @DeleteMapping("/history/clear")
-    public void clearHistory() {
-        repository.deleteAll();
+        ResponseCard card = new ResponseCard();
+        Map<String, Object> cardMap = (Map<String, Object>) botReply.get("card");
+        card.setData((String) cardMap.get("data"));
+        card.setSessionId(request.getSessionId());
+        card.setHeader((String) cardMap.get("header"));
+        card.setTags((List<String>) cardMap.getOrDefault("tags", new ArrayList<>()));
+        card.setSummary((String) cardMap.get("summary"));
+        card.setCreated(LocalDateTime.now());
+        return ResponseEntity.ok(card);
     }
 }
 

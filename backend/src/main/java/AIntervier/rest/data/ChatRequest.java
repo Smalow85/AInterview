@@ -4,15 +4,14 @@ import java.io.Serializable;
 
 public class ChatRequest implements Serializable {
     private String sessionId;
-    private String jobTitle;
-    private String message;
+    private String text;
 
     public ChatRequest() {
     }
 
     public ChatRequest(String sessionId, String message) {
         this.sessionId = sessionId;
-        this.message = message;
+        this.text = message;
     }
 
     public String getSessionId() {
@@ -23,20 +22,12 @@ public class ChatRequest implements Serializable {
         this.sessionId = sessionId;
     }
 
-    public String getMessage() {
-        return message;
+    public String getText() {
+        return text;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public String getJobTitle() {
-        return jobTitle;
-    }
-
-    public void setJobTitle(String jobTitle) {
-        this.jobTitle = jobTitle;
+    public void setText(String text) {
+        this.text = text;
     }
 }
 

@@ -1,13 +1,12 @@
 // frontend/live-api-web-console-main/src/lib/store-interview-question.ts
 
 import { create } from "zustand";
-import { LeariningGoal } from "../types/interview-question";
 import { ThemedConversationSettings } from "../types/settings";
 
 interface ConversationQuestionsState {
     themedConversation: ThemedConversationSettings;
     updateConversation: (partialSettings: Partial<ThemedConversationSettings>) => void; 
-    fetchQuestions: (sessionId: string, theme: string) => Promise<LeariningGoal[]>;
+    fetchQuestions: (sessionId: string, theme: string) => Promise<string[]>;
 }
 
 const defaultConversation: ThemedConversationSettings = {
@@ -25,7 +24,7 @@ export const useThemedConversationStore = create<ConversationQuestionsState>((se
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-                const data: LeariningGoal[] = await response.json();
+                const data: string[] = await response.json();
                 return data;
         } catch (error) {
             console.error("Error fetching questions:", error);

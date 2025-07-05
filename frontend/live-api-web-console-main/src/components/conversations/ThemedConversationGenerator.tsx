@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import './InterviewQuestionGenerator.scss';
 import { useSettingsStore } from '../../lib/store-settings';
-import { LeariningGoal } from '../../types/interview-question';
 import { useThemedConversationStore } from '../../lib/store-conversation';
 
 
@@ -13,28 +12,24 @@ export interface ThemedConversationRequest {
 const ThemedConversationGenerator = (props: { onClose: () => void }) => {
     const [theme, setTheme] = useState('');
     const [keySkills, setKeySkills] = useState<string[]>([]);
-    const [generatedQuestions, setGeneratedQuestions] = useState<LeariningGoal[]>([]);
+    const [generatedQuestions, setGeneratedQuestions] = useState<string[]>([]);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showCloseButton, setShowCloseButton] = useState(false);
-    const { settings, updateSettings, persistUpdates } = useSettingsStore();
-    const sessionId = settings.activeSessionId;
+    const { updateSettings } = useSettingsStore();
     const { updateConversation } = useThemedConversationStore();
     const { onClose } = props;
 
     const handleGenerate = async (theme: string, keySkills: string[]) => {
-        if (!sessionId) {
-            setError('Session ID is required.');
-            return;
-        }
         setLoading(true);
         setError('');
         try {
+            const sessionId = crypto.randomUUID();
             const requestBody: ThemedConversationRequest = {
                 theme: theme,
                 keySkills: keySkills
             };
-            const response = await fetch(`http://localhost:8080/api/themed-conversation/themed-conversation-plan/${sessionId}`, {
+            const response = await fetch(`http://localhost:8080/api/themed-conversation-plan/${sessionId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -49,8 +44,7 @@ const ThemedConversationGenerator = (props: { onClose: () => void }) => {
             const data = await response.json(); 
             setGeneratedQuestions(data.learningGoals);
             updateConversation({ theme: theme, learningGoals: data.learningGoals, conversationLoaded: true})
-            updateSettings({sessionActive: true, sessionType: 'themed_interview', activeSessionId: crypto.randomUUID()});
-            persistUpdates(settings)
+            updateSettings({sessionActive: true, sessionType: 'themed_interview', activeSessionId: sessionId});
             setShowCloseButton(true);
         } catch (error) {
             console.log("Error:", error)
@@ -104,7 +98,7 @@ const ThemedConversationGenerator = (props: { onClose: () => void }) => {
             <h2>Generated questions:</h2>
             <ul>
                 {generatedQuestions.map((question, index) => (
-                    <li key={index}>{question.text}</li>
+                    <li key={index}>{question}</li>
                 ))}
             </ul>
             {showCloseButton && (

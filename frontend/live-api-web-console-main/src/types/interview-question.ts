@@ -27,12 +27,6 @@ export interface Question {
   evaluationCriteria: string[];
 }
 
-export interface LeariningGoal {
-  goal_id: string;
-  text: string;
-  timestamp: string;
-}
-
 export interface Answer {
   question_id: string;
   answer_text: string;

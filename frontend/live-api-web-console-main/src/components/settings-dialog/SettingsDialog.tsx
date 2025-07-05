@@ -13,7 +13,7 @@ import { useSettingsStore } from "../../lib/store-settings";
 import { UserSettings } from "../../types/settings";
 import { saveSettingsInDb } from "../../lib/storage/settings-storage";
 
-const fieldLabels: {[key in keyof EditableUserSettings]: string} = {
+const fieldLabels: { [key in keyof EditableUserSettings]: string } = {
   firstName: "First Name",
   lastName: "Last Name",
   email: "Email",
@@ -44,15 +44,19 @@ export default function SettingsDialog() {
     } catch (error: any) {
       console.error("Error saving settings:", error);
     } finally {
-  
+
     }
   }, [settings, setConfig, config]);
+
+  if (!settings || Object.keys(settings).length === 0) {
+    return <div>Loading settings...</div>;
+  }
 
   return (
     <div className="settings-dialog">
       <button className="action-button material-symbols-outlined"
         onClick={() => setOpen(!open)}>
-          Settings
+        Settings
       </button>
       <dialog className="dialog" style={{ display: open ? "block" : "none" }}>
         <div className="dialog-container">
@@ -65,19 +69,19 @@ export default function SettingsDialog() {
             {Object.entries(settings)
               .filter(([key]) => editableFields.includes(key as keyof EditableUserSettings))
               .map(([key, value]) => (
-              <div key={key} className="setting-row">
-                <label htmlFor={key}>{fieldLabels[key as keyof typeof fieldLabels]}:</label>
-                <input
-                  key={key}
-                  className="system-small"
-                  type="text"
-                  id={key}
-                  name={key}
-                  value={value || ""}
-                  onChange={handleSettingChange}
-                />
-              </div>
-            ))}
+                <div key={key} className="setting-row">
+                  <label htmlFor={key}>{fieldLabels[key as keyof typeof fieldLabels]}:</label>
+                  <input
+                    key={key}
+                    className="system-small"
+                    type="text"
+                    id={key}
+                    name={key}
+                    value={value || ""}
+                    onChange={handleSettingChange}
+                  />
+                </div>
+              ))}
           </div>
           <button className="save-button material-symbols-outlined" onClick={saveSettings}>
             Save

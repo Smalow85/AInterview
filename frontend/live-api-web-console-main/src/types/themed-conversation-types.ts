@@ -1,22 +1,22 @@
-import { Question, Answer, AnalysisResult, LeariningGoal } from "./interview-question";
+import { Answer } from "./interview-question";
 
 export class ThemedConversationBot {
   public active: boolean = false;
   public theme: string = '';
-  public learning_goals: LeariningGoal[] = [];
+  public learning_goals: string[] = [];
   public current_goal_index: number = 0;
   public answers: Answer[] = [];
   public questionSent: boolean = false;
   public candidateInfo: { name?: string; position?: string; sessionId?: string } | null = null;
 
 
-  public _initializeThemedConversationStructure(learning_goals : LeariningGoal[], theme: string) {
+  public _initializeThemedConversationStructure(learning_goals : string[], theme: string) {
     this.learning_goals = learning_goals;
     this.theme = theme;
     this.active = true;
   }
 
-  public get_current_goal(): LeariningGoal | null {
+  public get_current_goal(): string | null {
     return this.learning_goals[this.current_goal_index];
   }
 

@@ -1,4 +1,4 @@
-import { InterviewPhase, LeariningGoal } from "./interview-question";
+import { InterviewPhase } from "./interview-question";
 
 export interface UserSettings {
   id: number;
@@ -13,7 +13,7 @@ export interface UserSettings {
 }
 
 export interface ThemedConversationSettings {
-  learningGoals: LeariningGoal[];
+  learningGoals: string[];
   theme: string;
   conversationLoaded: boolean
 }
