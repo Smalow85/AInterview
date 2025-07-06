@@ -13,12 +13,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # ✅ Аутентификация через сервисный аккаунт (JSON в секрете GCP_SA_KEY)
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      # ✅ Установка gcloud
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
         with:
-          version: 'latest'
           project_id: coral-rider-464414-e1
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          install_components: docker
 
       - name: Configure Docker for Artifact Registry or GCR
         run: gcloud auth configure-docker
