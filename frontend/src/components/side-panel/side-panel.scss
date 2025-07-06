@@ -1,0 +1,139 @@
+.side-panel {
+  background: var(--Neutral-10);
+  width: 350px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.2s ease-in;
+  font-family: var(--font-family);
+  border-radius: 8px;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+.side-panel-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--Neutral-10);
+  border-bottom: 1px solid var(--Neutral-20);
+  width: 100%;
+  height: auto;
+}
+
+.side-panel-container {
+  flex-grow: 1;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  align-self: flex-end;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.side-panel-container::-webkit-scrollbar {
+  display: none;
+}
+
+.input-container {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--Neutral-10);
+}
+
+.input-container .clear-button {
+  width: 100%;
+  padding: 12px 20px;
+  background-color: var(--Neutral-30);
+  color: var(--Neutral-90);
+  border: 1px solid var(--Neutral-50);
+  border-radius: 8px;
+  font-family: var(--font-family);
+  font-size: 0.8rem;
+  margin-right: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.input-container .clear-button:hover {
+  background-color: var(--Red-500);
+  color: var(--text);
+}
+
+.input-container .end-conversation-button {
+  width: 100%;
+  padding: 12px 20px;
+  background-color: var(--Neutral-30);
+  color: var(--Neutral-90);
+  border: 1px solid var(--Neutral-50);
+  border-radius: 8px;
+  font-family: var(--font-family);
+  font-size: 0.8rem;
+  margin-left: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.input-container .end-conversation-button:hover {
+  background-color: var(--Green-700);
+  color: var(--text);
+}
+
+.input-container .start-conversation-button {
+  width: 100%;
+  padding: 12px 20px;
+  background-color: var(--Neutral-30);
+  color: var(--Neutral-90);
+  border: 1px solid var(--Neutral-50);
+  border-radius: 8px;
+  font-family: var(--font-family);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.input-container .start-conversation-button:hover {
+  background-color: var(--Blue-400);
+  color: var(--text);
+}
+
+
+.side-panel-title {
+  font-weight: 100;
+  padding: 16px 24px;
+  color: var(--Neutral-70);
+  margin: 0;
+  letter-spacing: 0.05em;
+  line-height: 1.5;
+  flex: 1 1 auto;
+  transition: color 0.2s;
+  user-select: none;
+}
+
+select {
+  width: 100%;
+  padding: 12px 20px;
+  background-color: var(--Neutral-30);
+  color: var(--Neutral-90);
+  border: 1px solid var(--Neutral-50);
+  border-radius: 8px;
+  font-family: var(--font-family);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  appearance: none; /* Remove default arrow */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E"); /* Custom arrow */
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--Neutral-40);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
