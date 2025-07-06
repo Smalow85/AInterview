@@ -29,12 +29,12 @@ jobs:
 
       - name: Push Docker image
         run: |
-          docker push gcr.io/YOUR_PROJECT_ID/my-fullstack-app
+          docker push gcr.io/coral-rider-464414-e1/my-fullstack-app
 
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy my-fullstack-app \
-            --image gcr.io/YOUR_PROJECT_ID/my-fullstack-app \
+            --image gcr.io/coral-rider-464414-e1/my-fullstack-app \
             --platform managed \
             --region us-central1 \
             --allow-unauthenticated \
