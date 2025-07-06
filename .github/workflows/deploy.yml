@@ -22,7 +22,6 @@ jobs:
         uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: coral-rider-464414-e1
-          install_components: docker
 
       - name: Configure Docker for Artifact Registry or GCR
         run: gcloud auth configure-docker
