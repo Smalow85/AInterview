@@ -25,7 +25,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t gcr.io/YOUR_PROJECT_ID/my-fullstack-app .
+          docker build -t gcr.io/coral-rider-464414-e1/my-fullstack-app .
 
       - name: Push Docker image
         run: |
