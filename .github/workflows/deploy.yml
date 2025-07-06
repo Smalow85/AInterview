@@ -26,9 +26,12 @@ jobs:
       - name: Configure Docker for Artifact Registry or GCR
         run: gcloud auth configure-docker
 
+
       - name: Build Docker image
+        env:
+          REACT_APP_GEMINI_API_KEY: ${{ secrets.REACT_APP_GEMINI_API_KEY }}
         run: |
-          docker build -t gcr.io/coral-rider-464414-e1/my-fullstack-app .
+          docker build --build-arg REACT_APP_GEMINI_API_KEY=${REACT_APP_GEMINI_API_KEY} -t gcr.io/coral-rider-464414-e1/my-fullstack-app .
 
       - name: Push Docker image
         run: |

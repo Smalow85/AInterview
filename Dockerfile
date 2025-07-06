@@ -1,5 +1,7 @@
 # Этап 1: Сборка фронтенда
 FROM node:18-alpine AS frontend-builder
+ARG REACT_APP_GEMINI_API_KEY
+ENV REACT_APP_GEMINI_API_KEY=$REACT_APP_GEMINI_API_KEY
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm install
