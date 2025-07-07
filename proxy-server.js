@@ -49,10 +49,9 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// Все остальные запросы отправляем на React
-//app.get("*", (req, res) => {
-//  res.sendFile(path.join(__dirname, "frontend/build/index.html"));
-//});
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "frontend/build/index.html"));
+});
 
 app.listen(PORT, () => {
   console.log(`Proxy server is running on port ${PORT}`);
