@@ -3,7 +3,7 @@ import { LiveClientOptions } from "../types";
 import { ChatMessage } from "../types/chat-message";
 import { ResponseCard } from "../types/response-card";
 import { v4 as uuidv4 } from 'uuid';
-import { getCurrentUserSettingsAsync } from "./store-settings";
+import { getCurrentUserSettingsAsync, updateSettingsAsync } from "./store-settings";
 import { TechnicalInterviewBot } from "../types/interview-types";
 import { Question } from "../types/interview-question";
 import { ThemedConversationBot } from "../types/themed-conversation-types";
@@ -24,7 +24,6 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         this.onmessage = this.onmessage.bind(this);
         this.handleTurnComplete = this.handleTurnComplete.bind(this);
         this.sendRealtimeInput = this.sendRealtimeInput.bind(this);
-        this.saveResumptionTokenToDatabase = this.saveResumptionTokenToDatabase.bind(this);
     }
 
     protected async onmessage(message: any) {
@@ -34,9 +33,11 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
             return;
         }
         if (message.sessionResumptionUpdate) {
+            console.log(message)
             if (message.sessionResumptionUpdate.resumable && message.sessionResumptionUpdate.newHandle) {
-                const userSettings = await getCurrentUserSettingsAsync();
-                this.saveResumptionTokenToDatabase({ sessionId: userSettings.activeSessionId, resumptionToken: message.sessionResumptionUpdate.newHandle })
+                console.log("resumptionToken saving...");
+                updateSettingsAsync({resumptionToken: message.sessionResumptionUpdate.newHandle});
+                console.log("resumptionToken saved...");
             }
         }
 
@@ -371,21 +372,6 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
 
             const data = await response.json();
             return { status: response.status, data };
-        } catch (error) {
-            console.error('Error saving card to database:', error);
-            return null;
-        }
-    }
-
-    saveResumptionTokenToDatabase(hanleData: { sessionId: string; resumptionToken: string }) {
-        try {
-            fetch('http://localhost:8080/api/settings/resumption-token', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(hanleData)
-            });
         } catch (error) {
             console.error('Error saving card to database:', error);
             return null;

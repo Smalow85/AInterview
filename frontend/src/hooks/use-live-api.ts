@@ -101,7 +101,7 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
             silenceDurationMs: 300,
           }
         },
-        //sessionResumption: { handle: settings.resumptionToken },
+        sessionResumption: { handle: settings.resumptionToken },
         tools: [
           { googleSearch: {} },
           {
@@ -131,13 +131,36 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
             silenceDurationMs: 300,
           }
         },
-        //sessionResumption: { handle: settings.resumptionToken },
+        sessionResumption: { handle: settings.resumptionToken },
         tools: [
           { googleSearch: {} },
           {
             functionDeclarations: [advanceThemedConversation,
                                   evaluateThemedAnswer,
                                   askChallengingQuestion]
+          },
+        ],
+      });
+    }
+    if (settings.sessionType === 'default') {
+      setConfig({
+        systemInstruction: initialSystemPrompt || settings.systemInstruction,
+        inputAudioTranscription: { enabled: true },
+        outputAudioTranscription: { enabled: true },
+        realtimeInputConfig: {
+          automaticActivityDetection: {
+            disabled: false,
+            startOfSpeechSensitivity: StartSensitivity.START_SENSITIVITY_LOW,
+            endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_LOW,
+            prefixPaddingMs: 30,
+            silenceDurationMs: 300,
+          }
+        },
+        sessionResumption: { handle: settings.resumptionToken },
+        tools: [
+          { googleSearch: {} },
+          {
+            functionDeclarations: []
           },
         ],
       });
@@ -173,8 +196,8 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
       if (settingsLoaded || settings.sessionActive) {
         try {
           await setupLiveAPIConfig();
-          console.log(config);
           await connectWithConfig();
+          console.log('Curr config', config);
         } catch (error) {
           console.error("Error setting up Live API config:", error);
           return;

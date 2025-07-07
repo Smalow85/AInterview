@@ -25,6 +25,7 @@ import { AudioRecorder } from "../../lib/audio-recorder";
 import AudioPulse from "../audio-pulse/AudioPulse";
 import "./control-tray.scss";
 import SettingsDialog from "../settings-dialog/SettingsDialog";
+import { useSettingsStore } from "../../lib/store-settings";
 
 export type ControlTrayProps = {
   videoRef: RefObject<HTMLVideoElement>;
@@ -42,9 +43,6 @@ type MediaStreamButtonProps = {
   stop: () => any;
 };
 
-/**
- * button used for triggering webcam or screen-capture
- */
 const MediaStreamButton = memo(
   ({ isStreaming, onIcon, offIcon, start, stop }: MediaStreamButtonProps) =>
     isStreaming ? (
@@ -61,7 +59,7 @@ const MediaStreamButton = memo(
 function ControlTray({
   videoRef,
   children,
-  onVideoStreamChange = () => {},
+  onVideoStreamChange = () => { },
   supportsVideo,
   enableEditingSettings,
 }: ControlTrayProps) {
@@ -74,15 +72,47 @@ function ControlTray({
   const [muted, setMuted] = useState(false);
   const renderCanvasRef = useRef<HTMLCanvasElement>(null);
   const connectButtonRef = useRef<HTMLButtonElement>(null);
+  const refreshButtonRef = useRef<HTMLButtonElement>(null);
+  const { client, connected, connect, disconnect, config, setConfig } = useLiveAPIContext();
+  const [isResuming, setIsResuming] = useState(false);
+  const { settings, updateSettings } = useSettingsStore();
 
-  const { client, connected, connect, disconnect, volume } =
-    useLiveAPIContext();
+  const handleResumeConversation = async () => {
+    console.log("refresh", config);
+    setIsResuming(true);
+    try {
+      setConfig({ ...config, sessionResumption: { handle: settings.resumptionToken } });
+      await connect();
+      setIsResuming(false);
+    } catch (error) {
+      console.error("Error resuming conversation:", error);
+      setIsResuming(false);
+    }
+  };
+
+  const handleStartNewConversation = async () => {
+    console.log("new", config);
+    updateSettings({ resumptionToken: undefined })
+    setConfig({ ...config, sessionResumption: undefined });
+    try {
+      await connect();
+    } catch (error) {
+      console.error("Error starting new conversation:", error);
+    }
+  };
 
   useEffect(() => {
     if (!connected && connectButtonRef.current) {
       connectButtonRef.current.focus();
     }
   }, [connected]);
+
+  useEffect(() => {
+    if (!isResuming && refreshButtonRef.current) {
+      refreshButtonRef.current.focus();
+    }
+  }, [connected]);
+
   useEffect(() => {
     document.documentElement.style.setProperty(
       "--volume",
@@ -94,27 +124,27 @@ function ControlTray({
     const onData = (base64: string) => {
       try {
         client
-        .sendRealtimeInput([ 
-          {
-          mimeType: "audio/pcm;rate=16000",
-          data: base64,
-        },
-        ])
-      } catch(error) {
-          console.error("Error sending realtime input:", error);
-        };
+          .sendRealtimeInput([
+            {
+              mimeType: "audio/pcm;rate=16000",
+              data: base64,
+            },
+          ])
+      } catch (error) {
+        console.error("Error sending realtime input:", error);
+      };
     };
 
     if (connected && !muted && audioRecorder) {
       console.log("starting audio recorder");
       try {
         audioRecorder
-        .on("data", onData)
-        .on("volume", setInVolume)
-        .start() 
-       } catch(error)  {
-          console.error("Error starting audio recorder:", error);
-        };
+          .on("data", onData)
+          .on("volume", setInVolume)
+          .start()
+      } catch (error) {
+        console.error("Error starting audio recorder:", error);
+      };
     } else {
       console.log("Stopping audio recorder");
       audioRecorder.stop();
@@ -191,7 +221,7 @@ function ControlTray({
         </button>
 
         <div className="action-button no-action outlined">
-          <AudioPulse volume={volume} active={connected} hover={false} />
+          <AudioPulse volume={inVolume} active={connected} hover={false} />
         </div>
 
         {supportsVideo && (
@@ -216,17 +246,37 @@ function ControlTray({
       </nav>
 
       <div className={cn("connection-container", { connected })}>
-        <div className="connection-button-container">
+        <div className="connection-button-container" style={{ display: "flex", gap: "8px" }}>
+          {/* Кнопка начать новую сессию */}
           <button
             ref={connectButtonRef}
             className={cn("action-button connect-toggle", { connected })}
-            onClick={connected ? disconnect : connect}
+            onClick={connected ? disconnect : handleStartNewConversation}
+            title="Начать новую сессию"
           >
             <span className="material-symbols-outlined filled">
               {connected ? "pause" : "play_arrow"}
             </span>
           </button>
+
+          {/* Кнопка продолжить предыдущую сессию */}
+          {config.sessionResumption && (
+            <button
+              ref={refreshButtonRef}
+              className={cn("action-button connect-toggle", { connected })}
+              onClick={connected ? disconnect : handleResumeConversation}
+              disabled={isResuming}
+              title="Продолжить предыдущую сессию"
+              style={{ backgroundColor: "#4caf50" }}
+            >
+              <span className="material-symbols-outlined filled">
+                {isResuming ? "pause" : "replay"}
+              </span>
+            </button>
+          )}
         </div>
+
+
         <span className="text-indicator">Streaming</span>
       </div>
       {enableEditingSettings ? <SettingsDialog /> : ""}

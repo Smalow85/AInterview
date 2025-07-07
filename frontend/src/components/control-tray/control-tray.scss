@@ -133,6 +133,22 @@
       border: 1px solid var(--Neutral-30);
       background: var(--Neutral-5);
       padding: 10px;
+
+      .start-button {
+  background-color: #4caf50; // зелёный
+}
+
+.resume-button {
+  background-color: #2196f3; // синий
+}
+
+.start-button:hover {
+  background-color: #45a049;
+}
+
+.resume-button:hover {
+  background-color: #1e88e5;
+}
     }
 
     .text-indicator {
