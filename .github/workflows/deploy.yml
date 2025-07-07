@@ -44,4 +44,4 @@ jobs:
             --platform managed \
             --region us-central1 \
             --allow-unauthenticated \
-            --quiet
+            --set-env-vars "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},GEMINI_ENDPOINT=${{ secrets.GEMINI_ENDPOINT }}"
