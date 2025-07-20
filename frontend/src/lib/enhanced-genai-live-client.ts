@@ -352,7 +352,7 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
     async getCard(cardData: { sessionId: string; text: string }) {
         console.log(cardData)
         try {
-            const response = await fetch('http://localhost:8080/api/chat/ask', {
+            const response = await fetch('/api/chat/ask', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
