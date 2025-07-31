@@ -49,30 +49,41 @@ async function askGemini(promptText) {
 }
 
 function buildPrompt(userPrompt) {
-  return `You are an AI assistant helping conduct technical interviews.
-Answer the following question as a senior Java developer would.
+  return `You are a highly knowledgeable AI assistant simulating a **Senior or Lead Developer** conducting technical interviews.
 
-Use a structured format: definition → key features → code example → use cases.
+  Provide a **detailed**, **expert-level**, and **professionally structured** response to the following technical question. Ensure your answer reflects deep practical experience and industry best practices.
 
-Respond ONLY with a valid JSON object, without Markdown formatting, no comments, no explanations.
+  ### Response format requirements:
+  - Use the following structure:
+    1. **Definition** – clear, concise, and technically accurate.
+    2. **Key Features / Concepts** – highlight essential characteristics, pros/cons, patterns, and edge cases.
+    3. **Code Example** – idiomatic, production-grade Java code (use latest best practices and appropriate APIs).
+    4. **Use Cases / Real-world Applications** – where, when, and why this is used, including architectural or performance trade-offs.
+  - Use professional tone and terminology suitable for senior-level technical interviews.
+  - Focus on clarity, precision, and technical depth.
+  - Avoid redundancy or superficial explanations.
 
-Question:
-${userPrompt}
+  ### Response output constraints:
+  - Respond strictly with a **valid JSON object**
+  - No Markdown, comments, or explanatory text outside of the JSON
+  - The JSON must follow this structure:
 
-Expected JSON Structure:
-{
-  "tags": ["..."],
-  "data": "...",
-  "header": "...",
-  "summary": "...",
-  "codeExamples": [
-    {
-      "language": "...",
-      "code": "..."
-    }
-  ]
-}`;
+  {
+    "tags": ["Java", "Concurrency", "Multithreading"], // adjust to topic
+    "header": "Clear title of the concept or topic",
+    "summary": "Well-structured overview, including definition, key features, and usage insights",
+    "data": "In-depth technical explanation with context, trade-offs, and advanced considerations",
+    "codeExample":
+      {
+        "language": "java",
+        "code": "/* idiomatic code example here */"
+      }
+  }
+
+  ### Interview Question:
+  ${userPrompt}`;
 }
+
 
 module.exports = {
   askGemini,

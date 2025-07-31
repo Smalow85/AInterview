@@ -75,14 +75,21 @@ function ControlTray({
   const refreshButtonRef = useRef<HTMLButtonElement>(null);
   const { client, connected, connect, disconnect, config, setConfig } = useLiveAPIContext();
   const [isResuming, setIsResuming] = useState(false);
-  const { settings, updateSettings } = useSettingsStore();
+  const { settings, fetchSettings, updateSettings } = useSettingsStore();
 
-  const handleResumeConversation = async () => {
+  const handleConversation = async () => {
     console.log("refresh", config);
     setIsResuming(true);
     try {
-      setConfig({ ...config, sessionResumption: { handle: settings.resumptionToken } });
-      await connect();
+      const actualSettings = await fetchSettings();
+      const newConfig = {
+        ...config,
+        sessionResumption: { handle: actualSettings?.resumptionToken }
+      };
+
+      setConfig(newConfig); // обновляем состояние
+      updateSettings({ resumptionToken: undefined });
+      await connect(newConfig);
       setIsResuming(false);
     } catch (error) {
       console.error("Error resuming conversation:", error);
@@ -95,7 +102,7 @@ function ControlTray({
     updateSettings({ resumptionToken: undefined })
     setConfig({ ...config, sessionResumption: undefined });
     try {
-      await connect();
+      await connect(config);
     } catch (error) {
       console.error("Error starting new conversation:", error);
     }
@@ -247,30 +254,28 @@ function ControlTray({
 
       <div className={cn("connection-container", { connected })}>
         <div className="connection-button-container" style={{ display: "flex", gap: "8px" }}>
-          {/* Кнопка начать новую сессию */}
-          <button
-            ref={connectButtonRef}
-            className={cn("action-button connect-toggle", { connected })}
-            onClick={connected ? disconnect : handleStartNewConversation}
-            title="Начать новую сессию"
-          >
-            <span className="material-symbols-outlined filled">
-              {connected ? "pause" : "play_arrow"}
-            </span>
-          </button>
-
-          {/* Кнопка продолжить предыдущую сессию */}
-          {config.sessionResumption && (
+          {settings.resumptionToken ? (
             <button
               ref={refreshButtonRef}
               className={cn("action-button connect-toggle", { connected })}
-              onClick={connected ? disconnect : handleResumeConversation}
+              onClick={connected ? disconnect : handleConversation}
               disabled={isResuming}
               title="Продолжить предыдущую сессию"
               style={{ backgroundColor: "#4caf50" }}
             >
               <span className="material-symbols-outlined filled">
                 {isResuming ? "pause" : "replay"}
+              </span>
+            </button>
+          ) : (
+            <button
+              ref={connectButtonRef}
+              className={cn("action-button connect-toggle", { connected })}
+              onClick={connected ? disconnect : handleStartNewConversation}
+              title="Начать новую сессию"
+            >
+              <span className="material-symbols-outlined filled">
+                {connected ? "pause" : "play_arrow"}
               </span>
             </button>
           )}

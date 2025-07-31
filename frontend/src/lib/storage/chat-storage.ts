@@ -22,8 +22,11 @@ export async function clearMessagesBySessionId(sessionId: string): Promise<void>
   const store = tx.objectStore('messages');
   const index = store.index('sessionId');
 
-  for await (const cursor of index.iterate(sessionId)) {
+  let cursor = await index.openCursor(sessionId);
+
+  while (cursor) {
     cursor.delete();
+    cursor = await cursor.continue();
   }
 
   await tx.done;

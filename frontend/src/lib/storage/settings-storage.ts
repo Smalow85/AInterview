@@ -6,7 +6,6 @@ const STORE_NAME = 'settings';
 export async function getSettings(userId: number): Promise<UserSettings | undefined> {
   const db = await dbPromise;
   const result = await db.get(STORE_NAME, userId);
-  console.log('db: ', result)
   return result ?? null;
 }
 

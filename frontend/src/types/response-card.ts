@@ -6,7 +6,10 @@ export interface ResponseCard {
   expanded?: boolean;
   data: string;
   tags?: string[];
-  codeExample?: string;
+  codeExample?: {
+    language: string;
+    code: string;
+  };
   summary?: string;
   error?: string;
 }

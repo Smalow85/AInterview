@@ -13,9 +13,11 @@ export class TechnicalInterviewBot {
 
 
   public _initializeInterviewStructure(interview : InterviewSettings) {
-    this.phases = interview.phases;
-    this.position = interview.position;
-    this.active = true;
+    const newBot = new TechnicalInterviewBot();
+    newBot.phases = interview.phases;
+    newBot.position = interview.position;
+    newBot.active = true;
+    return newBot;
   }
 
   public get current_phase(): string {

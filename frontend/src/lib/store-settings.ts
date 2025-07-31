@@ -24,7 +24,7 @@ interface SettingsState {
   updateSettings: (partialSettings: Partial<UserSettings>) => void;
   updateTransientSettings: (partialSettings: Partial<UserSettings>) => void;
   persistUpdates: (settings: UserSettings) => void;
-  fetchSettings: () => Promise<void>;
+  fetchSettings: () => Promise<UserSettings | undefined>;
   settingsLoaded: boolean
 }
 
@@ -76,7 +76,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     const userId = defaultUserSettings.id;
     await saveSettingsInDb(settings, userId);
   },
-  fetchSettings: async () => {
+  fetchSettings: async (): Promise<UserSettings | undefined> => {
     try {
       const userId = defaultUserSettings.id
       let settings = await getSettings(userId);
@@ -86,6 +86,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         await saveSettingsInDb(settings, userId); // Save default settings
       }
       set({ settings, settingsLoaded: true });
+      return settings;
     } catch (error) {
       console.error('Error fetching messages:', error);
     }

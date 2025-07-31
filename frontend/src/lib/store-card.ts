@@ -56,7 +56,6 @@ export const useCardStore = create<StoreCardState>((set) => ({
   fetchCards: async () => {
     try {
       const settings = await getCurrentUserSettingsAsync();
-      console.log("Sett id", settings.activeSessionId);
       const response = await fetchCardsBySessionId(settings.activeSessionId);
       console.log(response)
       set({ cards: response, loading: false });

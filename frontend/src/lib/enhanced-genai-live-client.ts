@@ -435,6 +435,7 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
 
     private async handleAdvanceThemedConversation(args: any): Promise<any> {
         this.conversationBot.advance_to_next_question();
+        console.log(this.conversationBot);
         const curr_goal = this.conversationBot.get_current_goal()
         if (curr_goal) {
             await this.updateSystemInstructionForThemedConversation(curr_goal);
@@ -464,7 +465,7 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
 
     private async updateSystemInstructionForThemedConversation(currentGoal: string) {
         const systemPrompt = `Ты - эксперт по тематическим беседам. Текущая тема: ${currentGoal}.
-          Используй инструменты: evaluateThemedAnswer, advanceThemedConversation, askChallengingQuestion.`;
+          Используй инструменты: evaluate_themed_answer, advance_themed_conversation, ask_challenging_question.`;
 
         this.send({ text: `[SYSTEM_UPDATE] ${systemPrompt}` }, true);
         console.log("Updated system instruction for themed conversation.");

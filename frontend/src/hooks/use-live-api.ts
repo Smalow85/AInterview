@@ -30,9 +30,9 @@ import {
   ask_question,
   evaluate_answer_declaration,
   provide_feedback,
-  advanceThemedConversation,
-  evaluateThemedAnswer,
-  askChallengingQuestion
+  advance_themed_conversation,
+  evaluate_themed_answer,
+  ask_challenging_question
 } from "../types/tool-types";
 
 export type UseLiveAPIResults = {
@@ -42,13 +42,12 @@ export type UseLiveAPIResults = {
   model: string;
   setModel: (model: string) => void;
   connected: boolean;
-  connect: () => Promise<void>;
+  connect: (config: LiveConnectConfig) => Promise<void>;
   disconnect: () => Promise<void>;
   volume: number;
 };
 
 export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
-  const client = useMemo(() => new EnhancedGenAILiveClient(options), [options]);
   const audioStreamerRef = useRef<AudioStreamer | null>(null);
   const [model, setModel] = useState<string>("models/gemini-live-2.5-flash-preview");
   const [config, setConfig] = useState<LiveConnectConfig>(
@@ -79,16 +78,38 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
   const { themedConversation } = useThemedConversationStore();
   const promptConstructor = new PromptConstructor();
 
-  const interviewBot = useMemo(() => client.interviewBot, [client]);
-  const conversationBot = useMemo(() => client.conversationBot, [client]);
+  const client = useMemo(() => new EnhancedGenAILiveClient(options), [options]);
+  const [conversationBot, setConversationBot] = useState(() => client.conversationBot);
+  const [interviewBot, setInterviewBot] = useState(() => client.interviewBot);
 
-  async function setupLiveAPIConfig() {
-    console.log(settings)
-    var initialSystemPrompt = null;
+  async function setupLiveAPIConfig(): Promise<LiveConnectConfig> {
+    let initialSystemPrompt = null;
+    let newConfig: LiveConnectConfig = { // Initialize newConfig with a default value
+      systemInstruction: '',
+      contextWindowCompression: { slidingWindow: {} },
+        realtimeInputConfig: {
+          automaticActivityDetection: {
+            disabled: false,
+            startOfSpeechSensitivity: StartSensitivity.START_SENSITIVITY_LOW,
+            endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_LOW,
+            prefixPaddingMs: 30,
+            silenceDurationMs: 300,
+          }
+        },
+        inputAudioTranscription: { enabled: true },
+        outputAudioTranscription: { enabled: true },
+        tools: [
+          { googleSearch: {} },
+        { functionDeclarations: [] },
+      ],
+  };
+
     if (settings.sessionType === 'interview') {
-      interviewBot._initializeInterviewStructure(interview)
+      const initializedBot = interviewBot._initializeInterviewStructure(interview)
+      setInterviewBot(initializedBot);
       initialSystemPrompt = promptConstructor.constructInterviewInitialSystemPrompt(interviewBot);
-      setConfig({
+      client.interviewBot = initializedBot;
+      newConfig = {
         systemInstruction: initialSystemPrompt || settings.systemInstruction,
         inputAudioTranscription: { enabled: true },
         outputAudioTranscription: { enabled: true },
@@ -112,13 +133,15 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
               provide_feedback]
           },
         ],
-      });
+    };
     }
     if (settings.sessionType === 'themed_interview') {
-      conversationBot._initializeThemedConversationStructure(themedConversation.learningGoals, themedConversation.theme)
-      initialSystemPrompt = promptConstructor.constructThemedConversationInitialSystemPrompt(conversationBot, themedConversation);
-      console.log(initialSystemPrompt);
-      setConfig({
+      const initilizedBot = conversationBot._initializeThemedConversationStructure(themedConversation.learningGoals, themedConversation.theme)
+      console.log(initilizedBot);
+      setConversationBot(initilizedBot);
+      initialSystemPrompt = promptConstructor.constructThemedConversationInitialSystemPrompt(initilizedBot, themedConversation);
+      client.conversationBot = initilizedBot;
+      newConfig = {
         systemInstruction: initialSystemPrompt || settings.systemInstruction,
         inputAudioTranscription: { enabled: true },
         outputAudioTranscription: { enabled: true },
@@ -135,15 +158,15 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
         tools: [
           { googleSearch: {} },
           {
-            functionDeclarations: [advanceThemedConversation,
-                                  evaluateThemedAnswer,
-                                  askChallengingQuestion]
+            functionDeclarations: [advance_themed_conversation,
+              evaluate_themed_answer,
+              ask_challenging_question]
           },
         ],
-      });
+    };
     }
     if (settings.sessionType === 'default') {
-      setConfig({
+      newConfig = {
         systemInstruction: initialSystemPrompt || settings.systemInstruction,
         inputAudioTranscription: { enabled: true },
         outputAudioTranscription: { enabled: true },
@@ -163,14 +186,15 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
             functionDeclarations: []
           },
         ],
-      });
+    };
     }
+    return newConfig;
   }
 
-  const connectWithConfig = async () => {
+  const connectWithConfig = async (config: LiveConnectConfig) => {
     if (config && config.systemInstruction) {
       try {
-        await connect();
+        await connect(config);
       } catch (error) {
         console.error("Error connecting to Live API:", error);
       }
@@ -192,12 +216,15 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
 
   useEffect(() => {
     const connectToLiveAPI = async () => {
+      console.log('interview', interview);
+      console.log('conversation', themedConversation);
       console.log('connectToLiveAPI')
       if (settingsLoaded || settings.sessionActive) {
         try {
-          await setupLiveAPIConfig();
-          await connectWithConfig();
-          console.log('Curr config', config);
+          const newConfig = await setupLiveAPIConfig();
+          setConfig(newConfig); // Update the state with the new config
+          await connectWithConfig(newConfig);
+          console.log('Curr config', newConfig);
         } catch (error) {
           console.error("Error setting up Live API config:", error);
           return;
@@ -205,7 +232,7 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
       }
     };
     connectToLiveAPI();
-  }, [settings.sessionActive, themedConversation, interview]);
+  }, [settings.sessionActive, interview, themedConversation]);
 
   useEffect(() => {
     const onOpen = () => {
@@ -248,10 +275,12 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
         .disconnect();
     };
   }, [client, audioStreamerRef]);
-  const connect = useCallback(async () => {
+  
+  const connect = useCallback(async (config: LiveConnectConfig) => {
     if (!config) {
       throw new Error("config has not been set");
     }
+    console.log('config', config);
     client.disconnect();
     await client.connect(model, config);
   }, [client, config, model]);

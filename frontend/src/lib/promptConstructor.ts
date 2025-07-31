@@ -41,7 +41,6 @@ export class PromptConstructor {
   }
 
   constructThemedConversationInitialSystemPrompt(bot: ThemedConversationBot, conversation: ThemedConversationSettings): string {
-    console.log("inside constructor", bot)
     const currentGoal: string | null = bot.get_current_goal();
     console.log("goal", currentGoal)
 

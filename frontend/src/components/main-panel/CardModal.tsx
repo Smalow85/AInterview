@@ -2,6 +2,8 @@ import React, { useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import './Modal.scss';
 import { ResponseCard } from '../../types/response-card';
+import SyntaxHighlighter from 'react-syntax-highlighter';
+import { monokai } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 
 interface CardModalProps {
   onClose: () => void;
@@ -12,70 +14,70 @@ const Modal: React.FC<CardModalProps> = ({ onClose, card }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
   const parseMarkdown = (text: string): React.ReactNode[] => {
-  const elements: React.ReactNode[] = [];
-  const regex = /(\*\*`([^`]+)`\*\*|`([^`]+)`|\*\*([^*]+)\*\*|\*([^*]+)\*)/g;
+    const elements: React.ReactNode[] = [];
+    const regex = /(\*\*`([^`]+)`\*\*|`([^`]+)`|\*\*([^*]+)\*\*|\*([^*]+)\*)/g;
 
-  let lastIndex = 0;
-  let match;
+    let lastIndex = 0;
+    let match;
 
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      elements.push(text.slice(lastIndex, match.index));
+    while ((match = regex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        elements.push(text.slice(lastIndex, match.index));
+      }
+
+      if (match[2]) {
+        // **`code`**
+        elements.push(<strong key={match.index}><code>{match[2]}</code></strong>);
+      } else if (match[3]) {
+        // `code`
+        elements.push(<code key={match.index}>{match[3]}</code>);
+      } else if (match[4]) {
+        // **bold**
+        elements.push(<strong key={match.index}>{match[4]}</strong>);
+      } else if (match[5]) {
+        // *italic*
+        elements.push(<em key={match.index}>{match[5]}</em>);
+      }
+
+      lastIndex = regex.lastIndex;
     }
 
-    if (match[2]) {
-      // **`code`**
-      elements.push(<strong key={match.index}><code>{match[2]}</code></strong>);
-    } else if (match[3]) {
-      // `code`
-      elements.push(<code key={match.index}>{match[3]}</code>);
-    } else if (match[4]) {
-      // **bold**
-      elements.push(<strong key={match.index}>{match[4]}</strong>);
-    } else if (match[5]) {
-      // *italic*
-      elements.push(<em key={match.index}>{match[5]}</em>);
+    if (lastIndex < text.length) {
+      elements.push(text.slice(lastIndex));
     }
 
-    lastIndex = regex.lastIndex;
-  }
+    return elements;
+  };
 
-  if (lastIndex < text.length) {
-    elements.push(text.slice(lastIndex));
-  }
+  const highlightTagsWithMarkdownSupport = (
+    text?: string | null,
+    tags?: string[] | null
+  ): React.ReactNode => {
+    if (!text || !tags || tags.length === 0) {
+      return text ?? '';
+    }
 
-  return elements;
-};
+    const markdownParts = parseMarkdown(text);
 
-const highlightTagsWithMarkdownSupport = (
-  text?: string | null,
-  tags?: string[] | null
-): React.ReactNode => {
-  if (!text || !tags || tags.length === 0) {
-    return text ?? '';
-  }
+    return markdownParts.map((part, index) => {
+      if (typeof part !== 'string') return <React.Fragment key={index}>{part}</React.Fragment>;
 
-  const markdownParts = parseMarkdown(text);
+      const escapedTags = tags.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+      const tagRegex = new RegExp(`\\b(${escapedTags.join('|')})\\b`, 'gi');
+      const pieces = part.split(tagRegex);
 
-  return markdownParts.map((part, index) => {
-    if (typeof part !== 'string') return <React.Fragment key={index}>{part}</React.Fragment>;
-
-    const escapedTags = tags.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-    const tagRegex = new RegExp(`\\b(${escapedTags.join('|')})\\b`, 'gi');
-    const pieces = part.split(tagRegex);
-
-    return pieces.map((sub, i) => {
-      const match = tags.find(tag => tag.toLowerCase() === sub.toLowerCase());
-      return match ? (
-        <span key={`${index}-${i}`} className="highlighted">
-          {sub}
-        </span>
-      ) : (
-        <React.Fragment key={`${index}-${i}`}>{sub}</React.Fragment>
-      );
+      return pieces.map((sub, i) => {
+        const match = tags.find(tag => tag.toLowerCase() === sub.toLowerCase());
+        return match ? (
+          <span key={`${index}-${i}`} className="highlighted">
+            {sub}
+          </span>
+        ) : (
+          <React.Fragment key={`${index}-${i}`}>{sub}</React.Fragment>
+        );
+      });
     });
-  });
-};
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -106,9 +108,20 @@ const highlightTagsWithMarkdownSupport = (
               ))}
             </div>
           )}
-          {card.codeExample && (
-            <p><strong>Code:</strong> <pre>{card.codeExample}</pre></p>
+          {card.codeExample && typeof card.codeExample === 'object' && 'code' in card.codeExample && (
+            <div className="code-section">
+              <strong>Code example:</strong>
+              <SyntaxHighlighter
+                language={card.codeExample.language || 'java'}
+                style={monokai}
+                customStyle={{ background: 'none', padding: '1em' }}
+                codeTagProps={{ style: { background: 'none' } }}
+              >
+                {card.codeExample.code}
+              </SyntaxHighlighter>
+            </div>
           )}
+
         </div>
       </div>
     </div>,

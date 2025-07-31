@@ -47,6 +47,7 @@ export default function SidePanel() {
 
   const handleEndConversation = async () => {
     updateSettings({sessionActive: true, sessionType: 'default', activeSessionId: undefined});
+    clearMessages();
   };
   
   useEffect(() => {

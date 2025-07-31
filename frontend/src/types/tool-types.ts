@@ -103,7 +103,7 @@ export const provide_feedback: FunctionDeclaration = {
   }
 };
 
-export const advanceThemedConversation: FunctionDeclaration = {
+export const advance_themed_conversation: FunctionDeclaration = {
   name: "advance_themed_conversation",
   description: "Перейти к следующему этапу тематической беседы",
   parameters: {
@@ -122,9 +122,9 @@ export const advanceThemedConversation: FunctionDeclaration = {
   }
 };
 
-export const evaluateThemedAnswer: FunctionDeclaration = {
+export const evaluate_themed_answer: FunctionDeclaration = {
   name: "evaluate_themed_answer",
-  description: "Оценить ответ на вопрос в тематической беседе",
+  description: "Оценить ответ на вопрос в тематической беседе. Если ответа нет, подожди ответа, если юзер не знает ответ, ответь на вопрос сам и переходи к следующей теме, если пользователь просит пропустить тему, переходи к следующей теме",
   parameters: {
     type: Type.OBJECT,
     properties: {
@@ -148,27 +148,27 @@ export const evaluateThemedAnswer: FunctionDeclaration = {
       },
       nextAction: {
         type: Type.STRING,
-        enum: ["continue", "askFollowUp", "changeTopic"],
-        description: "Следующее действие: продолжить, задать уточняющий вопрос, изменить тему"
+        enum: ["advance_themed_conversation", "ask_challenging_question"],
+        description: "Следующее действие: продолжить, задать уточняющий вопрос, перейти к следущей теме"
       }
     },
     required: ["score", "relevance", "depth", "nextAction"]
   }
 };
 
-export const askChallengingQuestion: FunctionDeclaration = {
+export const ask_challenging_question: FunctionDeclaration = {
   name: "ask_challenging_question",
-  description: "Задать сложный вопрос для углубления обсуждения",
+  description: "Задать сложный или наводящий вопрос для углубленного обсуждения темы",
   parameters: {
     type: Type.OBJECT,
     properties: {
       question: {
         type: Type.STRING,
-        description: "Текст сложного вопроса"
+        description: "Текст сложного или наводящего вопроса"
       },
       topic: {
         type: Type.STRING,
-        description: "Тема сложного вопроса"
+        description: "Тема сложного или наводящего вопроса"
       }
     },
     required: ["question"]

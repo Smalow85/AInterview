@@ -158,6 +158,18 @@
   margin-top: 10px;
 }
 
+.code-section pre span,
+.code-section code span {
+  background: none !important;
+}
+
+.code-section pre {
+  background: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+
 
 /* Анимация */
 @keyframes cardFadeIn {
