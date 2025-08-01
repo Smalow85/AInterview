@@ -1,5 +1,7 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import "./document-panel.scss";
+import { useCardStore } from "../../lib/store-card";
+import CardModal from "../main-panel/CardModal";
 
 export default function DocumentPanel() {
   const [documents, setDocuments] = useState<File[]>([]);
@@ -7,6 +9,8 @@ export default function DocumentPanel() {
   const [serverMessage, setServerMessage] = useState<string | null>(null);
   const docListRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { favoriteCards, removeFromFavoriteCards } = useCardStore();
+  const [showModal, setShowModal] = useState<string | null>(null);
 
   const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -14,14 +18,29 @@ export default function DocumentPanel() {
       setSelectedDoc(file);
       setDocuments([...documents, file]);
       localStorage.setItem('documents', JSON.stringify(documents.map(file => file.name)));
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
+  const removeFromFavorite = async (e: React.MouseEvent, cardId: string, favorite: number) => {
+      e.stopPropagation();
+      console.log('Try to remove card with id ', cardId);
+      await removeFromFavoriteCards(cardId, favorite);
+      useCardStore.getState().fetchFavoriteCards();
+    };
+
   const handleDocSelect = (doc: File) => {
     setSelectedDoc(doc);
+  };
+
+  const handleCardClose = () => {
+    setShowModal(null);
+  };
+
+  const handleCardClick = (cardId: string) => {
+    setShowModal(cardId);
   };
 
   const sendDocToServer = async () => {
@@ -50,8 +69,36 @@ export default function DocumentPanel() {
     }
   };
 
+  useEffect(() => {
+    useCardStore.getState().fetchFavoriteCards();
+  }, []);
+
   return (
     <div className={"document-panel"}>
+      <div className="document-panel-top">
+        <div className="document-panel-title">Saved Cards</div>
+      </div>
+      <div className="saved-cards-container">
+        <div className="saved-cards-list">
+          {favoriteCards.map((card) => (
+            <div key={card.id} className="saved-card" onClick={() => handleCardClick(card.id)}
+              style={{ cursor: 'pointer' }}>
+              <h4>{card.header}</h4>
+              <p>{card.summary}</p>
+              <button
+                className="delete-icon"
+                onClick={(e) => {
+                  removeFromFavorite(e, card.id, 0);
+                }}
+                aria-label="Delete card"
+                title="Delete card"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
       <div className="document-panel-top">
         <div className="document-panel-title">Documents</div>
       </div>
@@ -78,7 +125,15 @@ export default function DocumentPanel() {
             {serverMessage && <p>{serverMessage}</p>}
           </div>
         )}
+
+        {showModal && (
+          <CardModal
+            onClose={handleCardClose}
+            card={favoriteCards.find(card => card.id === showModal) || null}
+          />
+        )}
       </div>
+
     </div>
   );
 }

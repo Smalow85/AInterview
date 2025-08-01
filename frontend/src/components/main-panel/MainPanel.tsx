@@ -2,10 +2,7 @@ import { useLiveAPIContext } from "../../contexts/LiveAPIContext";
 import { useCallback, useEffect, useRef } from "react";
 import "./MainPanel.scss";
 import { useCardStore } from "../../lib/store-card";
-import { getCurrentUserSettingsAsync, useSettingsStore } from "../../lib/store-settings";
 import ResponseCards from "./Cards";
-
-const userSettings = await getCurrentUserSettingsAsync();
 
 const MainPanel = () => {
     const { client } = useLiveAPIContext();

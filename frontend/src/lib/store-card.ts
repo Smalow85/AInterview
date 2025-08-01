@@ -16,15 +16,19 @@
 
 import { create } from "zustand";
 import { ResponseCard } from "../types/response-card";
-import { saveCardsToDB, fetchCardsBySessionId, clearCardsBySessionId } from "./storage/card-storage";
+import { saveCardsToDB, fetchCardsBySessionId, fetchFavoriteCards, clearCardsBySessionId } from "./storage/card-storage";
 import { getCurrentUserSettingsAsync } from "./store-settings";
 
 interface StoreCardState {
   maxCards: number;
   cards: ResponseCard[];
+  favoriteCards: ResponseCard[];
   addCard: (card: ResponseCard) => void;
   clearCards: (sesionId: string) => Promise<void>;
   fetchCards: () => Promise<void>;
+  fetchFavoriteCards: () => Promise<void>;
+  updateFavoriteStatus: (id: string, favorite: number) => Promise<void>;
+  removeFromFavoriteCards: (id: string, favorite: number) => Promise<void>;
   loading: boolean;
   updateCardInStore: (id: string) => void;
 }
@@ -32,6 +36,7 @@ interface StoreCardState {
 export const useCardStore = create<StoreCardState>((set) => ({
   maxCards: 4,
   cards: [],
+  favoriteCards: [],
   loading: true,
   addCard: (card) => {
     saveCardsToDB(card);
@@ -64,6 +69,40 @@ export const useCardStore = create<StoreCardState>((set) => ({
       set({ loading: false });
     }
   },
+  fetchFavoriteCards: async () => {
+    try {
+      const response = await fetchFavoriteCards();
+      console.log(response)
+      set({ favoriteCards: response, loading: false });
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      set({ loading: false });
+    }
+  },
+  updateFavoriteStatus: async (id, favorite) => {
+    set((state) => {
+      const index = state.cards.findIndex((card) => card.id === id);
+      if (index === -1) return {};
+
+      const updatedCard = { ...state.cards[index], favorite };
+      const updatedCards = [...state.cards];
+      updatedCards[index] = updatedCard;
+      saveCardsToDB(updatedCard);
+      return { cards: updatedCards };
+    });
+  },
+  removeFromFavoriteCards: async (id, favorite) => {
+    set((state) => {
+      const index = state.favoriteCards.findIndex((card) => card.id === id);
+      if (index === -1) return {};
+
+      const updatedCard = { ...state.favoriteCards[index], favorite };
+      const updatedCards = [...state.favoriteCards];
+      updatedCards[index] = updatedCard;
+      saveCardsToDB(updatedCard);
+      return { favoriteCards: updatedCards };
+    });
+  },
   clearCards: async (sesionId) => {
     try {
       clearCardsBySessionId(sesionId);
@@ -76,6 +115,5 @@ export const useCardStore = create<StoreCardState>((set) => ({
   updateCardInStore: (id: string) =>
     set((state) => ({
       cards: state.cards.map((card) => (card.id === id ? { ...card, expanded: !card.expanded } : card)),
-  })),
+    })),
 }));
-

@@ -10,6 +10,11 @@ export async function fetchCardsBySessionId(sessionId: string): Promise<Response
   return db.getAllFromIndex('cards', 'sessionId', sessionId);
 }
 
+export async function fetchFavoriteCards(): Promise<ResponseCard[]> {
+  const db = await dbPromise;
+  return db.getAllFromIndex('cards', 'favorite', 1);
+}
+
 export async function saveCardsToDB(card: ResponseCard): Promise<ResponseCard> {
   const db = await dbPromise;
   await db.put('cards', card);

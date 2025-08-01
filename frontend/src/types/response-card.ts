@@ -12,4 +12,5 @@ export interface ResponseCard {
   };
   summary?: string;
   error?: string;
+  favorite?: number;
 }

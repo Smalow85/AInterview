@@ -13,7 +13,7 @@ interface CardModalProps {
 const Modal: React.FC<CardModalProps> = ({ onClose, card }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
-  const parseMarkdown = (text: string): React.ReactNode[] => {
+  const parseMarkdown = (text: string): React.ReactNode[] => { 
     const elements: React.ReactNode[] = [];
     const regex = /(\*\*`([^`]+)`\*\*|`([^`]+)`|\*\*([^*]+)\*\*|\*([^*]+)\*)/g;
 
