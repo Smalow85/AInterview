@@ -1,12 +1,16 @@
 import { openDB } from 'idb';
 
-export const dbPromise = openDB('MyAppDB', 5, { // Increment database version to 2
+export const dbPromise = openDB('MyAppDB', 6, { // Increment database version to 2
   upgrade(db, oldVersion, newVersion, transaction) { // Added params
     if (!db.objectStoreNames.contains('settings')) {
       db.createObjectStore('settings');
     }
     if (!db.objectStoreNames.contains('messages')) {
       const store = db.createObjectStore('messages', { keyPath: 'id' });
+      store.createIndex('sessionId', 'sessionId');
+    }
+    if (!db.objectStoreNames.contains('conversations')) {
+      const store = db.createObjectStore('conversations');
       store.createIndex('sessionId', 'sessionId');
     }
 

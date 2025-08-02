@@ -1,4 +1,4 @@
-import { InterviewPhase } from "./interview-question";
+import { Answer, InterviewPhase } from "./interview-question";
 
 export interface UserSettings {
   id: number;
@@ -16,7 +16,9 @@ export interface UserSettings {
 export interface ThemedConversationSettings {
   activeSessionId: string;
   learningGoals: string[];
+  answers: Answer[];
   learningGoalFeedbacks: string[]; 
+  currentGoalIndex: number;
   theme: string;
   conversationLoaded: boolean;
   finalFeedback: string;

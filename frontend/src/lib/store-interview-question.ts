@@ -11,6 +11,7 @@ interface InterviewQuestionsState {
 }
 
 const defaultInterview: InterviewSettings = {
+    activeSessionId: '',
     phases: [],
     position: '',
     interviewLoaded: false

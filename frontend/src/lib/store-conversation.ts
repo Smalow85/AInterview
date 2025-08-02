@@ -2,16 +2,27 @@
 
 import { create } from "zustand";
 import { ThemedConversationSettings } from "../types/settings";
+import { saveConversationToDB, fetchConversationBySessionId } from "./storage/conversation-storage";
 
 interface ConversationQuestionsState {
     themedConversation: ThemedConversationSettings;
-    updateConversation: (partialSettings: Partial<ThemedConversationSettings>) => void; 
+    updateConversation: (partialSettings: Partial<ThemedConversationSettings>) => void;
     fetchQuestions: (sessionId: string, theme: string) => Promise<string[]>;
-}
+    getConversationBySessionId: (sessionId: string) => Promise<ThemedConversationSettings>;
+    getCurrentGoal: (conversation: ThemedConversationSettings) => string;
+    advanceToNextQuestion: (conversation: ThemedConversationSettings) => void;
+};
+
+export const getConversation = async (sessionId: string): Promise<ThemedConversationSettings> => {
+  await useThemedConversationStore.getState().getConversationBySessionId(sessionId); // Wait for settings to load
+  return useThemedConversationStore.getState().themedConversation;
+}; 
 
 const defaultConversation: ThemedConversationSettings = {
     activeSessionId: '',
     learningGoals: [],
+    answers: [],
+    currentGoalIndex: 0,
     learningGoalFeedbacks: [],
     theme: '',
     conversationLoaded: false,
@@ -27,17 +38,49 @@ export const useThemedConversationStore = create<ConversationQuestionsState>((se
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-                const data: string[] = await response.json();
-                return data;
+            const data: string[] = await response.json();
+            return data;
         } catch (error) {
             console.error("Error fetching questions:", error);
             return [];
         }
     },
-    updateConversation: (partialSettings: Partial<ThemedConversationSettings>) => { 
+    getConversationBySessionId: async (sessionId: string) => {
+        return fetchConversationBySessionId(sessionId);
+    },
+    updateConversation: (partialSettings: Partial<ThemedConversationSettings>) => {
         console.log(partialSettings);
+        set((state) => {
+            const themedConversation = { ...state.themedConversation, ...partialSettings };
+            saveConversationToDB(themedConversation);
+            return { themedConversation: themedConversation };
+        });
         set((state) => ({
-          themedConversation: { ...state.themedConversation, ...partialSettings }, // Merge settings
+            themedConversation: { ...state.themedConversation, ...partialSettings }, // Merge settings
         }));
-      },
+    },
+    getCurrentGoal: (themedConversation: ThemedConversationSettings) => {
+        return themedConversation.learningGoals[themedConversation.currentGoalIndex];
+    },
+    advanceToNextQuestion: (themedConversation: ThemedConversationSettings) => {
+        if (themedConversation.currentGoalIndex < themedConversation.learningGoals.length - 1) {
+            themedConversation.currentGoalIndex++;
+        }
+    },
+    generateFinalReport: (themedConversation: ThemedConversationSettings) => {
+        const report: any = {
+            total_questions_asked: themedConversation.answers.length,
+            answers_summary: themedConversation.answers.map((answer) => ({
+                question_id: answer.question_id,
+                evaluation_score: answer.evaluation_score,
+                notes: answer.notes,
+            })),
+            overall_score: 0,
+        };
+
+        const totalScore = themedConversation.answers.reduce((sum, ans) => sum + (ans.evaluation_score || 0), 0);
+        report.overall_score = themedConversation.answers.length > 0 ? totalScore / themedConversation.answers.length : 0;
+
+        return report;
+    }
 }));

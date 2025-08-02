@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef } from "react";
 import "./MainPanel.scss";
 import { useCardStore } from "../../lib/store-card";
 import ResponseCards from "./Cards";
+import ConversationProgressBar from "../progress-bar/ConversationProgressBar";
 
 const MainPanel = () => {
     const { client } = useLiveAPIContext();
@@ -23,6 +24,7 @@ const MainPanel = () => {
     return (
         <div className="main-panel" ref={cardsRef}>
           <ResponseCards onCardClick={handleCardClick} />
+          <ConversationProgressBar />
       </div>
     );
 };

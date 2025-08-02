@@ -43,7 +43,7 @@ const ThemedConversationGenerator = (props: { onClose: () => void }) => {
 
             const data = await response.json(); 
             setGeneratedQuestions(data.learningGoals);
-            updateConversation({ theme: theme, learningGoals: data.learningGoals, conversationLoaded: true})
+            updateConversation({ theme: theme, learningGoals: data.learningGoals, conversationLoaded: true, activeSessionId: sessionId})
             updateSettings({sessionActive: true, sessionType: 'themed_interview', activeSessionId: sessionId});
             setShowCloseButton(true);
         } catch (error) {

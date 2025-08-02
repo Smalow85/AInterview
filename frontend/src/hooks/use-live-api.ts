@@ -80,7 +80,6 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
   const promptConstructor = new PromptConstructor();
 
   const client = useMemo(() => new EnhancedGenAILiveClient(options), [options]);
-  const [conversationBot, setConversationBot] = useState(() => client.conversationBot);
   const [interviewBot, setInterviewBot] = useState(() => client.interviewBot);
 
   async function setupLiveAPIConfig(): Promise<LiveConnectConfig> {
@@ -137,11 +136,7 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
     };
     }
     if (settings.sessionType === 'themed_interview') {
-      const initilizedBot = conversationBot._initializeThemedConversationStructure(themedConversation.learningGoals, themedConversation.theme)
-      console.log(initilizedBot);
-      setConversationBot(initilizedBot);
-      initialSystemPrompt = promptConstructor.constructThemedConversationInitialSystemPrompt(initilizedBot, themedConversation);
-      client.conversationBot = initilizedBot;
+      initialSystemPrompt = promptConstructor.constructThemedConversationInitialSystemPrompt(themedConversation);
       newConfig = {
         systemInstruction: initialSystemPrompt || settings.systemInstruction,
         inputAudioTranscription: { enabled: true },
@@ -222,7 +217,7 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
       if (settingsLoaded || settings.sessionActive) {
         try {
           const newConfig = await setupLiveAPIConfig();
-          setConfig(newConfig); // Update the state with the new config
+          setConfig(newConfig);
           await connectWithConfig(newConfig);
         } catch (error) {
           console.error("Error setting up Live API config:", error);

@@ -2,6 +2,7 @@ import { TechnicalInterviewBot } from "../types/interview-types";
 import { Question } from "../types/interview-question";
 import { ThemedConversationBot } from "../types/themed-conversation-types";
 import { ThemedConversationSettings } from "../types/settings";
+import { useThemedConversationStore } from "./store-conversation";
 
 
 export class PromptConstructor {
@@ -40,8 +41,8 @@ export class PromptConstructor {
     return initialSystemPrompt;
   }
 
-  constructThemedConversationInitialSystemPrompt(bot: ThemedConversationBot, conversation: ThemedConversationSettings): string {
-    const currentGoal: string | null = bot.get_current_goal();
+  constructThemedConversationInitialSystemPrompt(conversation: ThemedConversationSettings): string {
+    const currentGoal: string | null = useThemedConversationStore.getState().getCurrentGoal(conversation);
     console.log("goal", currentGoal)
 
     const initialSystemPrompt = `You are leading a professional and structured educational dialogue. 

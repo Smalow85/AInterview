@@ -4,15 +4,14 @@ import { ChatMessage } from "../../types/chat-message";
 import { ResponseCard } from "../../types/response-card";
 import { v4 as uuidv4 } from 'uuid';
 import { getCurrentUserSettingsAsync, updateSettingsAsync } from "../store-settings";
+import { getConversation } from "../store-conversation"
 import { TechnicalInterviewBot } from "../../types/interview-types";
 import { Question } from "../../types/interview-question";
-import { ThemedConversationBot } from "../../types/themed-conversation-types";
 
 export class EnhancedGenAILiveClient extends GenAILiveClient {
     private accumulatedText: string = "";
     private accumulatedInputText: string = "";
     public interviewBot: TechnicalInterviewBot;
-    public conversationBot: ThemedConversationBot;
     private followUpCount: number = 0;
     private readonly maxFollowUps: number = 3;
     private lastUserAnswer: string = "";
@@ -20,7 +19,6 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
     constructor(options: LiveClientOptions) {
         super(options);
         this.interviewBot = new TechnicalInterviewBot();
-        this.conversationBot = new ThemedConversationBot();
         this.onmessage = this.onmessage.bind(this);
         this.handleTurnComplete = this.handleTurnComplete.bind(this);
         this.sendRealtimeInput = this.sendRealtimeInput.bind(this);
@@ -36,7 +34,7 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
             console.log(message)
             if (message.sessionResumptionUpdate.resumable && message.sessionResumptionUpdate.newHandle) {
                 console.log("resumptionToken saving...");
-                updateSettingsAsync({resumptionToken: message.sessionResumptionUpdate.newHandle});
+                updateSettingsAsync({ resumptionToken: message.sessionResumptionUpdate.newHandle });
                 console.log("resumptionToken saved...");
             }
         }
@@ -130,7 +128,7 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
                     break;
                 case "provide_answer":
                     functionResponse.response = await this.handleProvideAnswer(args);
-                    break;    
+                    break;
                 default:
                     console.warn(`Unknown function call: ${functionName}`);
                     functionResponse.response = {
@@ -438,16 +436,24 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
     }
 
     private async handleAdvanceThemedConversation(args: any): Promise<any> {
-        this.conversationBot.advance_to_next_question();
-        console.log(this.conversationBot);
-        const curr_goal = this.conversationBot.get_current_goal()
-        if (curr_goal) {
-            await this.updateSystemInstructionForThemedConversation(curr_goal);
-            const userSettings = await getCurrentUserSettingsAsync();
-            console.log(curr_goal);
-            this.addQuestionCard(userSettings.activeSessionId, curr_goal, userSettings.language);
-            return { status: "success", curr_goal };
+        const userSettings = await getCurrentUserSettingsAsync();
+        const conversation = await getConversation(userSettings.activeSessionId);
+        if (conversation.currentGoalIndex < conversation.learningGoals.length - 1) {
+            conversation.currentGoalIndex++;
+            const curr_goal = conversation.learningGoals[conversation.currentGoalIndex]
+            if (curr_goal) {
+                await this.updateSystemInstructionForThemedConversation(curr_goal);
+                const userSettings = await getCurrentUserSettingsAsync();
+                console.log(curr_goal);
+                this.addQuestionCard(userSettings.activeSessionId, curr_goal, userSettings.language);
+                return { status: "success", curr_goal };
+            }
+        } else {
+            const systemPrompt = `Интервью завершено. Используй provide_feedback с типом "final_feedback"
+                          для финального фидбека кандидату.`;
+            this.send({text: `[SYSTEM_UPDATE] ${systemPrompt}`}, true);
         }
+
     }
 
     private async handleEvaluateThemedAnswer(args: any): Promise<any> {
