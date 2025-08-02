@@ -15,12 +15,12 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { EnhancedGenAILiveClient } from "../lib/enhanced-genai-live-client";
+import { EnhancedGenAILiveClient } from "../lib/client/enhanced-genai-live-client";
 import { LiveClientOptions } from "../types";
 import { LiveConnectConfig, StartSensitivity, EndSensitivity, LiveServerToolCall, FunctionDeclaration } from "@google/genai";
-import { AudioStreamer } from "../lib/audio-streamer";
+import { AudioStreamer } from "../lib/audio/audio-streamer";
 import { audioContext } from "../lib/utils";
-import VolMeterWorket from "../lib/worklets/vol-meter";
+import VolMeterWorket from "../lib/audio/vol-meter";
 import { useSettingsStore } from "../lib/store-settings";
 import { PromptConstructor } from "../lib/promptConstructor";
 import { useThemedConversationStore } from "../lib/store-conversation";
@@ -32,7 +32,8 @@ import {
   provide_feedback,
   advance_themed_conversation,
   evaluate_themed_answer,
-  ask_challenging_question
+  ask_challenging_question,
+  provide_answer
 } from "../types/tool-types";
 
 export type UseLiveAPIResults = {
@@ -160,7 +161,9 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
           {
             functionDeclarations: [advance_themed_conversation,
               evaluate_themed_answer,
-              ask_challenging_question]
+              ask_challenging_question,
+              provide_answer
+            ]
           },
         ],
     };
@@ -216,15 +219,11 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
 
   useEffect(() => {
     const connectToLiveAPI = async () => {
-      console.log('interview', interview);
-      console.log('conversation', themedConversation);
-      console.log('connectToLiveAPI')
       if (settingsLoaded || settings.sessionActive) {
         try {
           const newConfig = await setupLiveAPIConfig();
           setConfig(newConfig); // Update the state with the new config
           await connectWithConfig(newConfig);
-          console.log('Curr config', newConfig);
         } catch (error) {
           console.error("Error setting up Live API config:", error);
           return;

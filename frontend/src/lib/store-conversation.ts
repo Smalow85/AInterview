@@ -10,9 +10,12 @@ interface ConversationQuestionsState {
 }
 
 const defaultConversation: ThemedConversationSettings = {
+    activeSessionId: '',
     learningGoals: [],
+    learningGoalFeedbacks: [],
     theme: '',
-    conversationLoaded: false
+    conversationLoaded: false,
+    finalFeedback: ''
 };
 
 export const useThemedConversationStore = create<ConversationQuestionsState>((set) => ({

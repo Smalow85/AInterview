@@ -103,9 +103,11 @@
 
 
 .side-panel-title {
+  font-family: var(--font-family);
+  font-size: 1.35rem;
   font-weight: 100;
   padding: 16px 24px;
-  color: var(--Neutral-70);
+  color: var(--text);
   margin: 0;
   letter-spacing: 0.05em;
   line-height: 1.5;

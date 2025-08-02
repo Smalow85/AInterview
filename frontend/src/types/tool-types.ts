@@ -174,3 +174,22 @@ export const ask_challenging_question: FunctionDeclaration = {
     required: ["question"]
   }
 };
+
+export const provide_answer: FunctionDeclaration = {
+  name: "provide_answer",
+  description: "Сформулировать вопрос, заданный пользователем, если пользователь просит самостоятельно ответить на вопрос или затрудняется с ответом",
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      question: {
+        type: Type.STRING,
+        description: "Текст вопроса"
+      },
+      topic: {
+        type: Type.STRING,
+        description: "Тема вопроса"
+      }
+    },
+    required: ["question"]
+  }
+};

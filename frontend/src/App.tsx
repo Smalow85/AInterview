@@ -22,7 +22,7 @@ import ControlTray from "./components/control-tray/ControlTray";
 import cn from "classnames";
 import { LiveClientOptions } from "./types";
 import MainPanel from "./components/main-panel/MainPanel";
-import DocumentPanel from "./components/document-panel/DocumentPanel";
+import DocumentPanel from "./components/right-panel/RightPanel";
 
 const API_KEY = process.env.REACT_APP_GEMINI_API_KEY as string;
 if (typeof API_KEY !== "string") {

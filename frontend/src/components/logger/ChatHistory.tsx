@@ -16,7 +16,7 @@
 
 import { useEffect } from "react";
 import { useLoggerStore } from "../../lib/store-logger";
-import "./logger.scss";
+import "./chat-history.scss";
 
 
 export default function Logger() {
@@ -32,8 +32,9 @@ export default function Logger() {
       <ul className="logger-list">
         {messages.map((message) => (
           <li key={message.id}>
-            <div className="sender">{message.sender}:</div>
-            <div className="message">{message.message}</div>
+            <span> 
+              <strong>{message.sender}:</strong> {message.message}
+            </span>
           </li>
         ))}
       </ul>

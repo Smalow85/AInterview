@@ -3,8 +3,8 @@ const axios = require('axios');
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_ENDPOINT = process.env.GEMINI_ENDPOINT;
 
-async function askGemini(promptText) {
-  const prompt = buildPrompt(promptText);
+async function askGemini(promptText, language) {
+  const prompt = buildPrompt(promptText, language);
 
   const requestBody = {
     contents: [
@@ -48,7 +48,7 @@ async function askGemini(promptText) {
   }
 }
 
-function buildPrompt(userPrompt) {
+function buildPrompt(userPrompt, language) {
   return `You are a highly knowledgeable AI assistant simulating a **Senior or Lead Developer** conducting technical interviews.
 
   Provide a **detailed**, **expert-level**, and **professionally structured** response to the following technical question. Ensure your answer reflects deep practical experience and industry best practices.
@@ -79,6 +79,8 @@ function buildPrompt(userPrompt) {
         "code": "/* idiomatic code example here */"
       }
   }
+
+  Important! provide answer in ${language} language.
 
   ### Interview Question:
   ${userPrompt}`;

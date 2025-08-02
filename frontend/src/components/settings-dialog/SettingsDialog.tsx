@@ -16,13 +16,14 @@ import { saveSettingsInDb } from "../../lib/storage/settings-storage";
 const fieldLabels: { [key in keyof EditableUserSettings]: string } = {
   firstName: "First Name",
   lastName: "Last Name",
+  language: "Language",
   email: "Email",
   systemInstruction: "System Prompt",
 };
 
 export default function SettingsDialog() {
   const [open, setOpen] = useState(false);
-  const editableFields: (keyof EditableUserSettings)[] = ['firstName', 'lastName', 'email', 'systemInstruction'];
+  const editableFields: (keyof EditableUserSettings)[] = ['firstName', 'lastName', 'email', 'language', 'systemInstruction'];
   const { config, setConfig } = useLiveAPIContext();
   const { settings, updateSettingsState, updateSettings } = useSettingsStore();
 

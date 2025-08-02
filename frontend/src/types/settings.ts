@@ -4,6 +4,7 @@ export interface UserSettings {
   id: number;
   firstName?: string;
   lastName?: string;
+  language: string;
   activeSessionId: string;
   email?: string;
   systemInstruction?: string;
@@ -13,20 +14,25 @@ export interface UserSettings {
 }
 
 export interface ThemedConversationSettings {
+  activeSessionId: string;
   learningGoals: string[];
+  learningGoalFeedbacks: string[]; 
   theme: string;
-  conversationLoaded: boolean
+  conversationLoaded: boolean;
+  finalFeedback: string;
 }
 
 export interface InterviewSettings {
+  activeSessionId: string;
   phases: InterviewPhase[];
   position: string;
   interviewLoaded: boolean
 }
 
 export interface EditableUserSettings {
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-    systemInstruction?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  language?: string;
+  systemInstruction?: string;
 }

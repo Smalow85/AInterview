@@ -60,12 +60,13 @@ export class PromptConstructor {
       3. Lead the dialogue — do not wait for the student to ask questions.
       4. If the student is confused, explain the concept in simple terms or offer hints.
       5. Once the current goal is fully covered, use a tool to advance to the next.
-      6. Keep a warm, respectful, and professional tone at all times.
+      6. Keep respectful and professional tone at all times.
 
       AVAILABLE TOOLS:
       - ask_challenging_question: Ask a deep or clarifying question about the current learning objective
       - evaluate_themed_answer: Evaluate the student’s response and provide constructive feedback
       - advance_themed_conversation: Proceed to the next learning objective
+      - provide_answer: form question that best fits user needs and context of conversation
 
       WORKFLOW:
       1. Greet the student and introduce the goal of this conversation

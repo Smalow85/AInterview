@@ -8,7 +8,7 @@ interface ResponseCardsProps {
   onCardClick?: (id: string) => void;
 }
 
-const ResponseCards: React.FC<ResponseCardsProps> = ({ onCardClick }) => {
+const Cards: React.FC<ResponseCardsProps> = ({ onCardClick }) => {
   const { cards, updateFavoriteStatus } = useCardStore();
   const [showModal, setShowModal] = useState<string | null>(null);
 
@@ -115,4 +115,4 @@ const ResponseCards: React.FC<ResponseCardsProps> = ({ onCardClick }) => {
   );
 };
 
-export default ResponseCards;
+export default Cards;

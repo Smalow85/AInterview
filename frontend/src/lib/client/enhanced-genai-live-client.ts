@@ -1,12 +1,12 @@
 import { GenAILiveClient } from "./genai-live-client";
-import { LiveClientOptions } from "../types";
-import { ChatMessage } from "../types/chat-message";
-import { ResponseCard } from "../types/response-card";
+import { LiveClientOptions } from "../../types";
+import { ChatMessage } from "../../types/chat-message";
+import { ResponseCard } from "../../types/response-card";
 import { v4 as uuidv4 } from 'uuid';
-import { getCurrentUserSettingsAsync, updateSettingsAsync } from "./store-settings";
-import { TechnicalInterviewBot } from "../types/interview-types";
-import { Question } from "../types/interview-question";
-import { ThemedConversationBot } from "../types/themed-conversation-types";
+import { getCurrentUserSettingsAsync, updateSettingsAsync } from "../store-settings";
+import { TechnicalInterviewBot } from "../../types/interview-types";
+import { Question } from "../../types/interview-question";
+import { ThemedConversationBot } from "../../types/themed-conversation-types";
 
 export class EnhancedGenAILiveClient extends GenAILiveClient {
     private accumulatedText: string = "";
@@ -128,6 +128,9 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
                 case "ask_challenging_question":
                     functionResponse.response = await this.handleAskChallengingQuestion(args);
                     break;
+                case "provide_answer":
+                    functionResponse.response = await this.handleProvideAnswer(args);
+                    break;    
                 default:
                     console.warn(`Unknown function call: ${functionName}`);
                     functionResponse.response = {
@@ -253,7 +256,7 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         const userSettings = await getCurrentUserSettingsAsync();
         const questionText = args.question_text;
         const additionalContext = args.additional_context || "";
-        this.addQuestionCard(userSettings.activeSessionId, questionText);
+        this.addQuestionCard(userSettings.activeSessionId, questionText, userSettings.language);
 
         this.interviewBot.questionSent = true;
 
@@ -325,11 +328,12 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         this.emit('messageAdded', chatMessage);
     }
 
-    private async addQuestionCard(sessionId: string, text: string) {
+    private async addQuestionCard(sessionId: string, text: string, language: string) {
         console.log(text)
         const res = await this.getCard({
             sessionId: sessionId,
-            text: text
+            text: text,
+            language: language
         });
 
         if (res?.status !== 204 && res?.data) {
@@ -349,7 +353,7 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         }
     }
 
-    async getCard(cardData: { sessionId: string; text: string }) {
+    async getCard(cardData: { sessionId: string; text: string, language: string }) {
         console.log(cardData)
         try {
             const response = await fetch('/api/chat/ask', {
@@ -441,7 +445,7 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
             await this.updateSystemInstructionForThemedConversation(curr_goal);
             const userSettings = await getCurrentUserSettingsAsync();
             console.log(curr_goal);
-            this.addQuestionCard(userSettings.activeSessionId, curr_goal);
+            this.addQuestionCard(userSettings.activeSessionId, curr_goal, userSettings.language);
             return { status: "success", curr_goal };
         }
     }
@@ -463,9 +467,23 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         return { status: "success", questionAsked: question };
     }
 
+    private async handleProvideAnswer(args: any): Promise<any> {
+        const question = args.question;
+        const userSettings = await getCurrentUserSettingsAsync();
+        console.log(question);
+        this.addQuestionCard(userSettings.activeSessionId, question, userSettings.language);
+    }
+
     private async updateSystemInstructionForThemedConversation(currentGoal: string) {
         const systemPrompt = `Ты - эксперт по тематическим беседам. Текущая тема: ${currentGoal}.
-          Используй инструменты: evaluate_themed_answer, advance_themed_conversation, ask_challenging_question.`;
+
+        АЛГОРИТМ РАБОТЫ:
+            1. Получил ответ → вызови evaluate_themed_answer
+            2. Если пользователь попросил ответить за него → provide_answer
+            3. Если ответ полный → advance_themed_conversation для следующей цели
+            4. Нужен уточняющий вопрос → ask_challenging_question
+
+        Используй инструменты: evaluate_themed_answer, advance_themed_conversation, ask_challenging_question, provide_answer.`;
 
         this.send({ text: `[SYSTEM_UPDATE] ${systemPrompt}` }, true);
         console.log("Updated system instruction for themed conversation.");

@@ -30,12 +30,10 @@ import {
 
 import { EventEmitter } from "eventemitter3";
 import { difference } from "lodash";
-import { LiveClientOptions, StreamingLog } from "../types";
-import { base64ToArrayBuffer } from "./utils";
-import { ChatMessage } from "../types/chat-message";
-import { ResponseCard } from "../types/response-card";
-import { UserSettings } from "../types/settings";
-
+import { LiveClientOptions, StreamingLog } from "../../types";
+import { base64ToArrayBuffer } from "../utils";
+import { ChatMessage } from "../../types/chat-message";
+import { ResponseCard } from "../../types/response-card";
 
 /**
  * Event types that can be emitted by the MultimodalLiveClient.

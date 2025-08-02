@@ -33,6 +33,7 @@ const defaultUserSettings: UserSettings = {
   firstName: 'Evgeny',
   lastName: 'Kononov',
   activeSessionId: '',
+  language: 'Russian',
   systemInstruction: 'You are helpful assistant',
   sessionActive: false
 };
@@ -80,8 +81,9 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     try {
       const userId = defaultUserSettings.id
       let settings = await getSettings(userId);
-
-      if (isEmpty(settings)) { // Check if settings are empty
+      if (!isEmpty(settings)) {
+        settings = { ...defaultUserSettings, ...settings };
+      } else {
         settings = defaultUserSettings;  // Use default settings
         await saveSettingsInDb(settings, userId); // Save default settings
       }

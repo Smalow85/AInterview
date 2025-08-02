@@ -1,49 +1,51 @@
+.document-panel-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--Neutral-10);
+  width: 100%;
+  height: auto;
+}
+
 .document-panel {
   background: var(--Neutral-10);
   width: 350px;
   height: 100vh;
   display: flex;
   flex-direction: column;
-  transition: width 0.2s ease-in;
   font-family: var(--font-family);
   border-radius: 8px;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
-}
-
-.document-panel-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: var(--Neutral-10);
-  border-bottom: 1px solid var(--Neutral-20);
-  width: 100%;
-  height: auto;
+  overflow: hidden;
 }
 
 .document-panel-container {
-  flex-grow: 1;
-  width: 100%;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-  box-sizing: border-box;
+  overflow: hidden;
+  transition: all 0.3s ease;
 }
 
-.document-panel-container::-webkit-scrollbar {
-  display: none;
+.document-panel-container.expanded {
+  flex: 1; /* Занимает оставшееся пространство */
+  min-height: 200px; /* Минимальная высота для показа контента */
+}
+
+.document-panel-container.collapsed {
+  flex: 0 0 auto; /* Только размер контента */
+}
+
+.document-content {
+  overflow-y: auto;
+  padding: 10px;
+  flex-grow: 1;
 }
 
 .input-container {
-  flex-shrink: 0;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
   padding: 16px;
-  width: 100%;
-  box-sizing: border-box;
+  border-top: 1px solid var(--Neutral-20);
   background: var(--Neutral-10);
+  flex-shrink: 0; /* Не сжимается */
 }
 
 .input-container .upload-button {
@@ -69,13 +71,41 @@
   font-size: 1.35rem;
   font-weight: 100;
   padding: 16px 24px;
-  color: var(--Neutral-70);
+  color: var(--text);
   margin: 0;
   letter-spacing: 0.05em;
   line-height: 1.5;
   flex: 1 1 auto;
   transition: color 0.2s;
   user-select: none;
+}
+
+.document-panel-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 16px;
+  max-height: 150px; /* Ограничиваем максимальную высоту списка */
+}
+
+.document-panel-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.document-panel-list li {
+  padding: 8px 12px;
+  margin: 4px 0;
+  background: var(--Neutral-20);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-family: var(--font-family);
+  font-size: 0.9rem;
+}
+
+.document-panel-list li:hover {
+  background: var(--Neutral-30);
 }
 
 .document-list {
@@ -88,7 +118,9 @@
   font-family: var(--font-family);
   font-size: 0.95rem;
   font-weight: 100;
-  padding: 12px 20px;
+  padding: 12px 16px;
+  flex-shrink: 0; /* Не сжимается */
+  border-top: 1px solid var(--Neutral-20);
 }
 
 .selected-document .upload-button {
@@ -102,6 +134,7 @@
   font-size: 0.9rem;
   cursor: pointer;
   transition: background-color 0.3s ease, color 0.3s ease;
+  margin-top: 8px;
 }
 
 .selected-document .upload-button:hover {
@@ -110,7 +143,8 @@
 }
 
 .saved-cards-container {
-  flex: 0 0 70%;
+  flex: 1; /* Занимает доступное пространство, но может сжиматься */
+  min-height: 200px; /* Минимальная высота для показа карточек */
   display: flex;
   flex-direction: column;
   padding: 10px;
@@ -126,7 +160,7 @@
 .saved-card {
   background: var(--Neutral-10);
   border: 1px solid var(--border-stroke);
-  border-radius: 8px;
+  border-radius: 4px;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -134,6 +168,7 @@
   display: flex;
   flex-direction: column;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  margin-bottom: 8px;
 }
 
 .saved-card:hover {
@@ -150,16 +185,16 @@
 
 .saved-card h4 {
   padding: 5px;
-  background: none;          /* убираем фон */
-  font-weight: 700;          /* жирный текст */
-  font-size: 1.1rem;         /* размер шрифта можно оставить */
-  color: var(--text); /* выделенный цвет, например синий */
+  background: none;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text);
   line-height: 1.2;
-  margin: 0 10px 4px 10px;  /* небольшой отступ снизу и по бокам */
+  margin: 0;
 }
 
 .saved-card p {
-  padding: 5px;  /* только внутренние отступы снизу и по бокам */
+  padding: 5px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -167,6 +202,7 @@
   font-family: var(--font-family);
   font-weight: 400;
   color: var(--gray-300);
+  margin: 0;
 }
 
 .delete-icon {
@@ -177,7 +213,7 @@
   background: transparent;
   border: none;
   font-size: 18px;
-  color: #c00;
+  color: var(--Red-500);
   cursor: pointer;
   padding: 0;
   line-height: 1;
@@ -186,4 +222,10 @@
 
 .saved-card:hover .delete-icon {
   display: block;
+}
+
+.delete-icon:hover svg {
+  stroke: var(--Red-500);
+  transform: scale(1.1);
+  transition: all 0.2s;
 }

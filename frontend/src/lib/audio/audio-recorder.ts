@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import { audioContext } from "./utils";
-import AudioRecordingWorklet from "./worklets/audio-processing";
-import VolMeterWorket from "./worklets/vol-meter";
+import { audioContext } from "../utils";
+import AudioRecordingWorklet from "../audio/audio-processing";
+import VolMeterWorket from "../audio/vol-meter";
 
-import { createWorketFromSrc } from "./audioworklet-registry";
+import { createWorketFromSrc } from "../audio/audioworklet-registry";
 import EventEmitter from "eventemitter3";
 
 function arrayBufferToBase64(buffer: ArrayBuffer) {

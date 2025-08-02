@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLiveAPIContext } from "../../contexts/LiveAPIContext";
-import Logger from "../logger/Logger";
+import Logger from "../logger/ChatHistory";
 import "./side-panel.scss";
 import { useLoggerStore } from "../../lib/store-logger";
 import { useSettingsStore } from "../../lib/store-settings";
