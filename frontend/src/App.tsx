@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./App.scss";
 import { LiveAPIProvider } from "./contexts/LiveAPIContext";
 import SidePanel from "./components/side-panel/SidePanel";
@@ -23,6 +23,7 @@ import cn from "classnames";
 import { LiveClientOptions } from "./types";
 import MainPanel from "./components/main-panel/MainPanel";
 import DocumentPanel from "./components/right-panel/RightPanel";
+import { useSettingsStore } from "./lib/store-settings";
 
 const API_KEY = process.env.REACT_APP_GEMINI_API_KEY as string;
 if (typeof API_KEY !== "string") {
@@ -36,6 +37,11 @@ const apiOptions: LiveClientOptions = {
 function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
+  const { settings } = useSettingsStore();
+
+  useEffect(() => {
+    document.body.className = settings.theme || "dark";
+  }, [settings.theme]);
 
   return (
       <LiveAPIProvider options={apiOptions}>

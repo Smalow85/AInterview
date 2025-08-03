@@ -66,6 +66,18 @@ export default function SettingsDialog() {
             <ResponseModalitySelector />
             <VoiceSelector />
           </div>
+          <div className="detail-item">
+            <label htmlFor="theme">Theme:</label>
+            <select
+              id="theme"
+              name="theme"
+              value={settings.theme || "dark"}
+              onChange={(e) => updateSettings({ ...settings, theme: e.target.value })}
+            >
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+            </select>
+          </div>
           <div>
             {Object.entries(settings)
               .filter(([key]) => editableFields.includes(key as keyof EditableUserSettings))

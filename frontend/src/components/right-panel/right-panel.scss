@@ -1,3 +1,6 @@
+@import "../../styles/variables";
+@import "../../styles/mixins";
+
 .document-panel-top {
   display: flex;
   justify-content: space-between;
@@ -51,9 +54,9 @@
 .input-container .upload-button {
   width: 100%;
   padding: 12px 20px;
-  background-color: var(--Neutral-30);
-  color: var(--Neutral-90);
-  border: 1px solid var(--Neutral-50);
+  background-color: var(--Neutral-20);
+  color: var(--text);
+  border: 1px solid var(--Neutral-30);
   border-radius: 8px;
   font-family: var(--font-family);
   font-size: 0.9rem;
@@ -62,7 +65,7 @@
 }
 
 .input-container .upload-button:hover {
-  background-color: var(--Blue-400);
+  background-color: var(--Neutral-30);
   color: var(--text);
 }
 

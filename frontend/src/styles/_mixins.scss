@@ -1,0 +1,171 @@
+@mixin interview-question-generator {
+    display: flex;
+    flex-direction: column;
+    width: 90%;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: var(--Neutral-10);
+    color: var(--Neutral-80);
+    overflow: auto; /* Add this line */
+    scrollbar-width: none; /* Add this line */
+    &::-webkit-scrollbar {
+        display: none; /* Add this line */
+    }
+
+    label {
+        display: block;
+        margin-top: 15px;
+        font-weight: 500;
+        font-size: 24px;
+    }
+
+    input[type="text"],
+    textarea {
+        border-radius: 12px;
+        background-color: var(--Neutral-15);
+        color: var(--Neutral-80);
+        font-family: var(--font-family);
+        border: 1px solid var(--Neutral-60);
+        margin-top: 8px;
+        line-height: 21px;
+        font-size: 18px;
+        width: calc(100% - 16px);
+        padding: 8px;
+        border: 0;
+        resize: vertical;
+        box-sizing: border-box;
+    }
+
+    input[type="file"] {
+      border-radius: 12px;
+      background-color: var(--Neutral-60);
+      color: var(--Neutral-80);
+      font-family: var(--font-family);
+      border: 1px solid var(--Neutral-60);
+      margin-top: 8px;
+      line-height: 21px;
+      font-size: 18px;
+      width: calc(100% - 16px);
+      padding: 8px;
+      border: 0;
+      box-sizing: border-box;
+      padding: 12px 20px;
+      cursor: pointer;
+      appearance: none;
+      text-align: center;
+    }
+
+    input[type="file"]::-webkit-file-upload-button {
+      display: none;
+    }
+
+    label[for="resume"] {
+        display: block;
+        margin-bottom: 10px;
+        font-weight: 500;
+        font-size: 10px;
+      cursor: pointer;
+    }
+    textarea {
+      min-height: 150px;
+      height: 150px;
+    }
+
+    button {
+        padding: 12px;
+        width: 100%;
+        background-color: var(--Accent-60);
+        border: 1px solid var(--Neutral-60);
+        color: var(--Neutral-80);
+        border-radius: 12px;
+        cursor: pointer;
+        margin-top: 10px;
+        transition: background-color 0.3s ease;
+        font-size: 18px;
+    }
+
+    button:hover {
+      background-color: var(--Neutral-60);
+    }
+
+    button:disabled {
+        background-color: var(--Green-500);
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    li {
+        margin-bottom: 5px;
+      color: var(--Neutral-80);
+    }
+
+    .error {
+      color: var(--Red-500);
+      margin-top: 10px;
+    }
+
+    .key-skills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .key-skills > div {
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+
+    .key-skills input[type="text"] {
+      flex-grow: 1;
+    }
+
+    #input-fields-section .key-skills .key-skill-item button {
+      padding: 12px;
+      width: 15%;
+      background-color: var(--Red-500);
+      color: var(--Neutral-10);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      font-size: 18px;
+    }
+
+    #input-fields-section .key-skills .key-skill-item button:hover {
+      background-color: var(--Red-700);
+    }
+
+    .key-skills button:hover {
+      background-color: var(--Red-700);
+    }
+
+    .file-upload-button {
+      padding: 12px 20px;
+      background-color: var(--Accent-60);
+      color: var(--Neutral-80);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background-color 0.3s ease;
+      font-size: 18px;
+    }
+
+    .file-upload-button:hover {
+      background-color: var(--Neutral-60);
+    }
+}
+
+%button-styles {
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-size: 18px;
+}

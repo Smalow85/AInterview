@@ -11,6 +11,7 @@ export interface UserSettings {
   sessionActive?: boolean;
   resumptionToken?: string;
   sessionType?: string;
+  theme?: string;
 }
 
 export interface ThemedConversationSettings {
@@ -37,4 +38,5 @@ export interface EditableUserSettings {
   email?: string;
   language?: string;
   systemInstruction?: string;
+  theme?: string;
 }
