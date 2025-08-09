@@ -105,6 +105,7 @@ export default function SidePanel() {
               <select
                 value={selectedConversationType || ''}
                 onChange={(e) => handleConversationTypeSelected(e.target.value)}
+                className="card-style-select"
               >
                 <option value="" disabled>
                    Select a type...

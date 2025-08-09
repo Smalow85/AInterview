@@ -108,12 +108,12 @@ const InterviewQuestionGenerator = (props: { onClose: () => void }) => {
             <div id="input-fields-section">
                 <div className="setting-row">
                     <label htmlFor="jobTitle">Desired role:</label>
-                    <input type="text" id="jobTitle" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} />
+                    <input type="text" id="jobTitle" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} className="card-style-input" />
                 </div>
 
                 <div className="setting-row">
                     <label htmlFor="requiredExperience">Required expirience:</label>
-                    <input type="text" id="requiredExperience" value={requiredExperience} onChange={(e) => setRequiredExperience(e.target.value)} />
+                    <input type="text" id="requiredExperience" value={requiredExperience} onChange={(e) => setRequiredExperience(e.target.value)} className="card-style-input" />
                 </div>
                 <div className="setting-row">
                     <label>CV:</label>
@@ -133,7 +133,7 @@ const InterviewQuestionGenerator = (props: { onClose: () => void }) => {
                 <div className="key-skills">
                     {keySkills.map((skill, index) => (
                         <div key={index} className="key-skill-item">
-                            <input type="text" value={skill} onChange={(e) => handleKeySkillChange(e, index)} />
+                            <input type="text" value={skill} onChange={(e) => handleKeySkillChange(e, index)} className="card-style-input" />
                             <button onClick={() => removeKeySkill(index)}>Remove</button>
                         </div>
 

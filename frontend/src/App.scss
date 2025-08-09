@@ -2,11 +2,16 @@
 @import "./styles/light-theme";
 @import "./styles/dark-theme";
 
+
 body {
-  font-family: "Roboto";
-  font-style: light;
-  background: var(--Neutral-30);
+  margin: 0;
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--background);
+  color: var(--color);
 }
+
 
 .material-symbols-outlined {
   &.filled {

@@ -1,6 +1,7 @@
 body.light {
   --background: #f5f5f5;
   --text: #212121;
+  color: var(--text); // Explicitly set color for body.light
   --gray-200: #eeeeee;
   --gray-300: #757575;
   --gray-500: #bdbdbd;

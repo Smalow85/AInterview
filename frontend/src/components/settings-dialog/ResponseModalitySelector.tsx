@@ -35,24 +35,6 @@ export default function ResponseModalitySelector() {
         id="response-modality-selector"
         className="react-select"
         classNamePrefix="react-select"
-        styles={{
-          control: (baseStyles) => ({
-            ...baseStyles,
-            background: "var(--Neutral-15)",
-            color: "var(--Neutral-90)",
-            minHeight: "33px",
-            maxHeight: "33px",
-            border: 0,
-          }),
-          option: (styles, { isFocused, isSelected }) => ({
-            ...styles,
-            backgroundColor: isFocused
-              ? "var(--Neutral-30)"
-              : isSelected
-              ? "var(--Neutral-20)"
-              : undefined,
-          }),
-        }}
         defaultValue={selectedOption}
         options={responseOptions}
         onChange={(e) => {

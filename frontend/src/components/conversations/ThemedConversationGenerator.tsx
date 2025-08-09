@@ -74,7 +74,7 @@ const ThemedConversationGenerator = (props: { onClose: () => void }) => {
             <div id="input-fields-section">
                 <div className="setting-row">
                     <label htmlFor="jobTitle">Theme:</label>
-                    <input type="text" id="jobTitle" value={theme} onChange={(e) => setTheme(e.target.value)} />
+                    <input type="text" id="jobTitle" value={theme} onChange={(e) => setTheme(e.target.value)} className="card-style-input" />
                 </div>
                 <div className="setting-row">
                     <label htmlFor="key-skills">Key skills:</label>
@@ -82,7 +82,7 @@ const ThemedConversationGenerator = (props: { onClose: () => void }) => {
                 <div className="key-skills">
                     {keySkills.map((skill, index) => (
                         <div key={index} className="key-skill-item">
-                            <input type="text" value={skill} onChange={(e) => handleKeySkillChange(e, index)} />
+                            <input type="text" value={skill} onChange={(e) => handleKeySkillChange(e, index)} className="card-style-input" />
                             <button onClick={() => removeKeySkill(index)}>Remove</button>
                         </div>
 

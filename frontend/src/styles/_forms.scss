@@ -1,0 +1,31 @@
+
+@import "./variables";
+
+@mixin _unified-form-field {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid var(--border-stroke);
+  border-radius: 8px;
+  background-color: var(--Neutral-15);
+  color: var(--text);
+  font-size: 1rem;
+  cursor: pointer;
+  box-sizing: border-box;
+  appearance: none; /* Remove default browser styling for selects */
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent-blue-headers);
+    box-shadow: 0 0 0 2px var(--Neutral-90);
+  }
+}
+
+.card-style-input,
+.card-style-select {
+  @include _unified-form-field;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--Neutral-90);
+  }
+}

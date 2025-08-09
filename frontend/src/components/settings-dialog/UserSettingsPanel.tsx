@@ -1,10 +1,16 @@
-import React, { useCallback, ChangeEvent, FormEventHandler } from 'react';
-import { useSettingsStore } from '../../lib/store-settings';
-import { useLiveAPIContext } from '../../contexts/LiveAPIContext';
-import { EditableUserSettings, UserSettings } from '../../types/settings';
-import { saveSettingsInDb } from '../../lib/storage/settings-storage';
+
+import {
+  ChangeEvent,
+  FormEventHandler,
+  useCallback
+} from "react";
+import { useLiveAPIContext } from "../../contexts/LiveAPIContext";
+import { EditableUserSettings, UserSettings } from "../../types/settings";
 import ResponseModalitySelector from "./ResponseModalitySelector";
 import VoiceSelector from "./VoiceSelector";
+import { useSettingsStore } from "../../lib/store-settings";
+import { saveSettingsInDb } from "../../lib/storage/settings-storage";
+import ThemeSelector from "./ThemeSelector";
 
 const fieldLabels: { [key in keyof EditableUserSettings]: string } = {
   firstName: "First Name",
@@ -14,12 +20,18 @@ const fieldLabels: { [key in keyof EditableUserSettings]: string } = {
   systemInstruction: "System Prompt",
 };
 
-const UserSettingsPanel: React.FC = () => {
-  const { settings, updateSettings } = useSettingsStore();
-  const { config, setConfig } = useLiveAPIContext();
 
-  const handleSettingChange: FormEventHandler<HTMLInputElement> = useCallback(
-    (e: ChangeEvent<HTMLInputElement>) => {
+interface UserSettingsPanelProps {
+  onClose: () => void;
+}
+
+export default function UserSettingsPanel({ onClose }: UserSettingsPanelProps) {
+  const editableFields: (keyof EditableUserSettings)[] = ['firstName', 'lastName', 'email', 'language', 'systemInstruction'];
+  const { config, setConfig } = useLiveAPIContext();
+  const { settings, updateSettingsState, updateSettings } = useSettingsStore();
+
+  const handleSettingChange: FormEventHandler<HTMLInputElement | HTMLSelectElement> = useCallback(
+    (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       updateSettings({ ...settings, [e.target.name]: e.target.value });
     },
     [settings, updateSettings]
@@ -29,29 +41,37 @@ const UserSettingsPanel: React.FC = () => {
     try {
       const userId = 1;
       const data: UserSettings = await saveSettingsInDb(settings, userId);
+      console.log(data)
       setConfig({ ...config, systemInstruction: data.systemInstruction });
-      updateSettings(data);
+      updateSettingsState(data)
+      onClose();
     } catch (error: any) {
       console.error("Error saving settings:", error);
     }
-  }, [settings, setConfig, config, updateSettings]);
+  }, [settings, setConfig, config, onClose, updateSettingsState]);
 
-  if (!settings) {
-    return <div>Loading...</div>;
+  if (!settings || Object.keys(settings).length === 0) {
+    return <div>Loading settings...</div>;
   }
 
   return (
-    <div className="user-info-card">
-      <div className="card-header">
-        <h2>User Settings</h2>
+    <div className="user-settings-panel">
+      <h3>User Settings</h3>
+      <div className="mode-selectors">
+        <ResponseModalitySelector />
+        <VoiceSelector />
+        <ThemeSelector />
       </div>
-      <div className="user-details">
+
+      <div>
         {Object.entries(settings)
-          .filter(([key]) => Object.keys(fieldLabels).includes(key))
+          .filter(([key]) => editableFields.includes(key as keyof EditableUserSettings))
           .map(([key, value]) => (
-            <div key={key} className="detail-item">
+            <div key={key} className="setting-row">
               <label htmlFor={key}>{fieldLabels[key as keyof typeof fieldLabels]}:</label>
               <input
+                key={key}
+                className="card-style-input"
                 type="text"
                 id={key}
                 name={key}
@@ -61,27 +81,9 @@ const UserSettingsPanel: React.FC = () => {
             </div>
           ))}
       </div>
-      <div className="selectors-container">
-        <ResponseModalitySelector />
-        <VoiceSelector />
-      </div>
-      <div className="detail-item">
-        <label htmlFor="theme">Theme:</label>
-        <select
-          id="theme"
-          name="theme"
-          value={settings.theme || "dark"}
-          onChange={(e) => updateSettings({ ...settings, theme: e.target.value })}
-        >
-          <option value="dark">Dark</option>
-          <option value="light">Light</option>
-        </select>
-      </div>
-      <button className="save-button" onClick={saveSettings}>
-        Save Settings
+      <button className="save-button material-symbols-outlined" onClick={saveSettings}>
+        Save
       </button>
     </div>
   );
-};
-
-export default UserSettingsPanel;
+}

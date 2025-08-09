@@ -60,7 +60,8 @@ const Cards: React.FC<ResponseCardsProps> = ({ onCardClick }) => {
               }}
             >
               <header className="card-header">
-                <h3 title={card.header}>{card.header}
+                <h3 title={card.header}>
+                  <span className="title-text">{card.header}</span>
                 <button
                   className={`favorite-btn ${card.favorite ? 'is-favorite' : ''}`}
                   onClick={(e) => addOrRemoveToFavorite(e, card.id, card.favorite == 1 ? 0 : 1)}

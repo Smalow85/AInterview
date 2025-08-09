@@ -38,7 +38,7 @@ const SimpleConversationGenerator = (props: { onClose: () => void }) => {
         <div id="interview-question-generator">
             <div className="setting-row">
                 <label htmlFor="jobTitle">Desired role:</label>
-                <input type="text" id="jobTitle" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} />
+                <input type="text" id="jobTitle" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} className="card-style-input" />
             </div>
             <button onClick={handleGenerate} disabled={loading}>
                 {loading ? 'Starting...' : 'Start'}

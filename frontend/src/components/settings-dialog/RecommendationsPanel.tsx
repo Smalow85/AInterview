@@ -1,24 +1,9 @@
-import React from 'react';
 
-interface RecommendationsPanelProps {
-  recommendations: { id: number; text: string }[];
-}
-
-const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({ recommendations }) => {
+export default function RecommendationsPanel() {
   return (
-    <div className="recommendations-card">
-      <div className="card-header">
-        <h2>Recommendations</h2>
-      </div>
-      <ul className="recommendations-list">
-        {recommendations.map((rec) => (
-          <li key={rec.id} className="recommendation-item">
-            <p>{rec.text}</p>
-          </li>
-        ))}
-      </ul>
+    <div className="recommendations-panel">
+      <h3>Recommendations</h3>
+      <p>Recommendations based on your activity will be displayed here.</p>
     </div>
   );
-};
-
-export default RecommendationsPanel;
+}
