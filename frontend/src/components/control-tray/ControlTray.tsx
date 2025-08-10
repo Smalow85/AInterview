@@ -1,19 +1,3 @@
-/**
- * Copyright 2024 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 import cn from "classnames";
 
 import { memo, ReactNode, RefObject, useEffect, useRef, useState } from "react";
@@ -88,7 +72,6 @@ function ControlTray({
       };
 
       setConfig(newConfig); // обновляем состояние
-      updateSettings({ resumptionToken: undefined });
       await connect(newConfig);
       setIsResuming(false);
     } catch (error) {
@@ -212,6 +195,16 @@ function ControlTray({
     videoStreams.filter((msr) => msr !== next).forEach((msr) => msr.stop());
   };
 
+  const handleConnectToggle = () => {
+    if (connected) {
+      disconnect();
+    } else if (settings.resumptionToken) {
+      handleConversation();
+    } else {
+      handleStartNewConversation();
+    }
+  };
+
   return (
     <section className="control-tray">
       <canvas style={{ display: "none" }} ref={renderCanvasRef} />
@@ -254,34 +247,18 @@ function ControlTray({
 
       <div className={cn("connection-container", { connected })}>
         <div className="connection-button-container" style={{ display: "flex", gap: "8px" }}>
-          {settings.resumptionToken ? (
-            <button
-              ref={refreshButtonRef}
+          <button
+            ref={connectButtonRef}
               className={cn("action-button connect-toggle", { connected })}
-              onClick={connected ? disconnect : handleConversation}
+            onClick={handleConnectToggle}
               disabled={isResuming}
-              title="Продолжить предыдущую сессию"
-              style={{ backgroundColor: "#4caf50" }}
+            title={settings.resumptionToken ? "Продолжить предыдущую сессию" : "Начать новую сессию"}
             >
               <span className="material-symbols-outlined filled">
-                {isResuming ? "pause" : "replay"}
+              {connected ? "pause" : (settings.resumptionToken ? "replay" : "play_arrow")}
               </span>
             </button>
-          ) : (
-            <button
-              ref={connectButtonRef}
-              className={cn("action-button connect-toggle", { connected })}
-              onClick={connected ? disconnect : handleStartNewConversation}
-              title="Начать новую сессию"
-            >
-              <span className="material-symbols-outlined filled">
-                {connected ? "pause" : "play_arrow"}
-              </span>
-            </button>
-          )}
         </div>
-
-
         <span className="text-indicator">Streaming</span>
       </div>
       {enableEditingSettings ? <SettingsDialog /> : ""}
