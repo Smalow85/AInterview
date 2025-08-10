@@ -1,16 +1,7 @@
 @import "../../styles/variables";
 @import "../../styles/mixins";
 
-.document-panel-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: var(--Neutral-10);
-  width: 100%;
-  height: auto;
-}
-
-.document-panel {
+.right-panel {
   background: var(--Neutral-10);
   width: 350px;
   height: 100vh;
@@ -18,74 +9,115 @@
   flex-direction: column;
   font-family: var(--font-family);
   overflow: hidden;
+  transition: width 0.3s ease;
+  position: fixed;
+  top: 0;
+  right: 0;
+  transform-origin: left center; /* сворачивание слева направо */
+
+  &.collapsed {
+    width: 50px;
+
+    .right-panel-content,
+    .right-panel-title,
+    .document-panel-list,
+    .selected-document,
+    .saved-cards-container {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(20px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    /* Кнопка загрузки всегда видна и активна */
+    .input-container {
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      transform: translateX(0) !important;
+    }
+  }
+}
+
+.right-panel-top {
+  display: flex;
+  justify-content: left;
+  padding: 16px 8px 16px 8px;
+
+  .collapse-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: var(--text);
+    cursor: pointer;
+    transition: transform 0.3s ease, color 0.2s;
+
+    &.collapsed {
+      transform: rotate(180deg);
+      align-items: top;
+    }
+
+    &:hover {
+      color: var(--accent-blue);
+    }
+  }
+
+  .right-panel-title {
+    font-family: var(--font-family);
+    font-size: 1.35rem;
+    font-weight: 500;
+    color: var(--text);
+    overflow: hidden;
+    max-width: 200px;
+    transition: opacity 0.2s ease, transform 0.2s ease, max-width 0.2s ease;
+  }
+}
+
+.right-panel-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  overflow: hidden;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .document-panel-container {
+  flex-shrink: 0;      /* не сжимается меньше минимального размера */
+  max-height: 0;       /* по умолчанию минимальная высота */
+  overflow-y: hidden;  /* скрывать контент, если его нет */
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  transition: all 0.3s ease;
-}
+  transition: max-height 0.3s ease;
 
-.document-panel-container.expanded {
-  flex: 1; /* Занимает оставшееся пространство */
-  min-height: 200px; /* Минимальная высота для показа контента */
-}
+  &.expanded {
+    max-height: 500px; /* максимально допустимая высота при наличии документов */
+    overflow-y: auto;  /* прокрутка, если много документов */
+    flex-shrink: 1;    /* позволяет расширяться */
+  }
 
-.document-panel-container.collapsed {
-  flex: 0 0 auto; /* Только размер контента */
-}
-
-.document-content {
-  overflow-y: auto;
-  padding: 10px;
-  flex-grow: 1;
-}
-
-.input-container {
-  padding: 16px;
-  border-top: 1px solid var(--Neutral-20);
-  background: var(--Neutral-10);
-  flex-shrink: 0; /* Не сжимается */
-}
-
-.input-container .upload-button {
-  width: 100%;
-  padding: 12px 20px;
-  background-color: var(--Neutral-20);
-  color: var(--text);
-  border: 1px solid var(--Neutral-30);
-  border-radius: 8px;
-  font-family: var(--font-family);
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-.input-container .upload-button:hover {
-  background-color: var(--Neutral-30);
-  color: var(--text);
-}
-
-.document-panel-title {
-  font-family: var(--font-family);
-  font-size: 1.35rem;
-  font-weight: 100;
-  padding: 16px 24px;
-  color: var(--text);
-  margin: 0;
-  letter-spacing: 0.05em;
-  line-height: 1.5;
-  flex: 1 1 auto;
-  transition: color 0.2s;
-  user-select: none;
+  &.collapsed {
+    max-height: 0;
+    overflow-y: hidden;
+    flex-shrink: 0;
+  }
 }
 
 .document-panel-list {
-  flex: 1;
+  flex: 1 1 auto;
   overflow-y: auto;
   padding: 0 16px;
-  max-height: 150px; /* Ограничиваем максимальную высоту списка */
+  max-height: 150px;
+
+   /* Скрыть скролл для Webkit-браузеров (Chrome, Safari, Edge) */
+  &::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+
+  /* Firefox */
+  scrollbar-width: none;
+
+  /* IE и Edge Legacy */
+  -ms-overflow-style: none;
 }
 
 .document-panel-list ul {
@@ -103,16 +135,10 @@
   transition: background-color 0.2s ease;
   font-family: var(--font-family);
   font-size: 0.9rem;
-}
 
-.document-panel-list li:hover {
-  background: var(--Neutral-30);
-}
-
-.document-list {
-  font-family: var(--font-family);
-  font-size: 0.95rem;
-  font-weight: 100;
+  &:hover {
+    background: var(--Neutral-30);
+  }
 }
 
 .selected-document {
@@ -120,8 +146,98 @@
   font-size: 0.95rem;
   font-weight: 100;
   padding: 12px 16px;
-  flex-shrink: 0; /* Не сжимается */
+  flex-shrink: 0;
   border-top: 1px solid var(--Neutral-20);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.saved-cards-container {
+  flex: 1 1 auto;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  overflow: hidden;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.saved-cards-list {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 5px;
+}
+
+.saved-card {
+  background: var(--Neutral-10);
+  border: 1px solid var(--border-stroke);
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  margin-bottom: 8px;
+
+  &:hover {
+    border-color: var(--Neutral-90);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent-blue-headers);
+    box-shadow: 0 0 0 2px var(--Neutral-90);
+  }
+
+  h4 {
+    padding: 5px;
+    background: none;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--text);
+    line-height: 1.2;
+    margin: 0;
+  }
+
+  p {
+    padding: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    font-family: var(--font-family);
+    font-weight: 400;
+    color: var(--gray-300);
+    margin: 0;
+  }
+}
+
+.delete-icon {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  display: none;
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  color: var(--Red-500);
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  user-select: none;
+
+  &:hover svg {
+    stroke: var(--Red-500);
+    transform: scale(1.1);
+    transition: all 0.2s;
+  }
+}
+
+.saved-card:hover .delete-icon {
+  display: block;
 }
 
 .selected-document .upload-button {
@@ -143,90 +259,28 @@
   color: var(--text);
 }
 
-.saved-cards-container {
-  flex: 1; /* Занимает доступное пространство, но может сжиматься */
-  min-height: 200px; /* Минимальная высота для показа карточек */
-  display: flex;
-  flex-direction: column;
-  padding: 10px;
-  overflow: hidden;
-}
-
-.saved-cards-list {
-  flex-grow: 1;
-  overflow-y: auto;
-  padding: 5px;
-}
-
-.saved-card {
+.input-container {
+  padding: 16px;
   background: var(--Neutral-10);
-  border: 1px solid var(--border-stroke);
-  border-radius: 4px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  margin-bottom: 8px;
-}
+  flex-shrink: 0;
+  margin-top: auto; /* прижать к низу панели */
+  transition: opacity 0.3s ease, transform 0.3s ease;
 
-.saved-card:hover {
-  border-color: var(--Neutral-90);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-  transform: translateY(-2px);
-}
+  .upload-button {
+    width: 100%;
+    padding: 12px 20px;
+    background-color: var(--Neutral-20);
+    color: var(--text);
+    border: 1px solid var(--Neutral-30);
+    border-radius: 8px;
+    font-family: var(--font-family);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
 
-.saved-card:focus {
-  outline: none;
-  border-color: var(--accent-blue-headers);
-  box-shadow: 0 0 0 2px var(--Neutral-90);
-}
-
-.saved-card h4 {
-  padding: 5px;
-  background: none;
-  font-weight: 700;
-  font-size: 1.1rem;
-  color: var(--text);
-  line-height: 1.2;
-  margin: 0;
-}
-
-.saved-card p {
-  padding: 5px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-  font-family: var(--font-family);
-  font-weight: 400;
-  color: var(--gray-300);
-  margin: 0;
-}
-
-.delete-icon {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  display: none;
-  background: transparent;
-  border: none;
-  font-size: 18px;
-  color: var(--Red-500);
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-  user-select: none;
-}
-
-.saved-card:hover .delete-icon {
-  display: block;
-}
-
-.delete-icon:hover svg {
-  stroke: var(--Red-500);
-  transform: scale(1.1);
-  transition: all 0.2s;
+    &:hover {
+      background-color: var(--Neutral-30);
+      color: var(--text);
+    }
+  }
 }

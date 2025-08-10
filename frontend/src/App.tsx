@@ -39,6 +39,17 @@ function App() {
   const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
   const { settings } = useSettingsStore();
 
+  const [isSidePanelCollapsed, setIsSidePanelCollapsed] = useState(false);
+  const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false);
+
+  const toggleSidePanel = () => {
+    setIsSidePanelCollapsed(!isSidePanelCollapsed);
+  };
+
+  const toggleRightPanel = () => {
+    setIsRightPanelCollapsed(!isRightPanelCollapsed);
+  };
+
   useEffect(() => {
     document.body.className = settings.theme || "dark";
   }, [settings.theme]);
@@ -47,7 +58,7 @@ function App() {
       <LiveAPIProvider options={apiOptions}>
         <div className="App">
           <div className="streaming-console">
-            <SidePanel />
+            <SidePanel isCollapsed={isSidePanelCollapsed} onToggleCollapse={toggleSidePanel} />
             <main>
               <div className="main-app-area">
                 <div className="main-app-area-main-panel">
@@ -72,7 +83,7 @@ function App() {
                 </ControlTray>
               </div>  
             </main>
-            <DocumentPanel />
+            <DocumentPanel isCollapsed={isRightPanelCollapsed} onToggleCollapse={toggleRightPanel} />
           </div>
         </div>
       </LiveAPIProvider>

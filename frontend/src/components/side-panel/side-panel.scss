@@ -10,17 +10,63 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  transition: width 0.2s ease-in;
   font-family: var(--font-family);
+  overflow: hidden;
+  transition: width 0.3s ease;
+
+  &.collapsed {
+    width: 50px;
+
+    .side-panel-title,
+    .side-panel-container {
+      opacity: 0;
+      transform: translateX(-20px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      pointer-events: none;
+    }
+
+    .input-container {
+      opacity: 0;
+      pointer-events: none;
+      height: 0;
+      padding: 0;
+    }
+  }
 }
 
 .side-panel-top {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: var(--Neutral-10);
-  width: 100%;
-  height: auto;
+  justify-content: left;
+  padding: 16px 8px 16px 8px;
+
+  .collapse-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: var(--text);
+    cursor: pointer;
+    transition: transform 0.3s ease, color 0.2s;
+
+    &.collapsed {
+      transform: rotate(180deg);
+    }
+
+    &:hover {
+      color: var(--accent-blue);
+    }
+  }
+
+  .side-panel-title {
+    font-family: var(--font-family);
+    font-size: 1.35rem;
+    font-weight: 500;
+    color: var(--text);
+    margin-right: 16px;
+    overflow: hidden;
+    max-width: 200px;
+    transition: opacity 0.2s ease, transform 0.2s ease, max-width 0.2s ease;
+
+  }
 }
 
 .side-panel-container {
@@ -102,21 +148,6 @@
 .input-container .start-conversation-button:hover {
   background-color: var(--accent-blue-active);
   color: var(--Neutral-00);
-}
-
-
-.side-panel-title {
-  font-family: var(--font-family);
-  font-size: 1.35rem;
-  font-weight: 100;
-  padding: 16px 24px;
-  color: var(--text);
-  margin: 0;
-  letter-spacing: 0.05em;
-  line-height: 1.5;
-  flex: 1 1 auto;
-  transition: color 0.2s;
-  user-select: none;
 }
 
 select {

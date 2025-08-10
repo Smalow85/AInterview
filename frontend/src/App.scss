@@ -67,11 +67,10 @@ body {
   flex-direction: column;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-}
+@media (prefers-reduced-motion: no-preference) {}
 
 .streaming-console {
-  background: var(--Neutral-15);
+  background: var(--Neutral-10);
   color: var(--gray-300);
   display: flex;
   height: 100vh;
@@ -86,7 +85,7 @@ body {
   .disabled {
     pointer-events: none;
 
-    > * {
+    >* {
       pointer-events: none;
     }
   }
@@ -99,8 +98,25 @@ body {
     justify-content: center;
     flex-grow: 1;
     gap: 1rem;
-    max-width: 100%;
+    max-width: calc(100vw - 700px);
+    /* Default width for both panels (350px * 2) */
     overflow: hidden;
+    transition: max-width 0.2s ease-in;
+  }
+
+  .side-panel.collapsed+main {
+    max-width: calc(100vw - 400px);
+    /* 350px (right) + 50px (left collapsed) */
+  }
+
+  main+.document-panel.collapsed {
+    max-width: calc(100vw - 400px);
+    /* 350px (left) + 50px (right collapsed) */
+  }
+
+  .side-panel.collapsed+main+.document-panel.collapsed {
+    max-width: calc(100vw - 100px);
+    /* 50px (left collapsed) + 50px (right collapsed) */
   }
 
   .main-app-area {
@@ -117,9 +133,11 @@ body {
       height: 100%;
       align-items: flex-start;
     }
+
     .control-tray-container {
-  width: 300px; /* Adjust width as needed */
-}
+      width: 300px;
+      /* Adjust width as needed */
+    }
   }
 
   .function-call {
