@@ -22,7 +22,6 @@ interface SettingsState {
   settings: UserSettings;
   updateSettingsState: (settings: UserSettings) => void;
   updateSettings: (partialSettings: Partial<UserSettings>) => void;
-  updateTransientSettings: (partialSettings: Partial<UserSettings>) => void;
   persistUpdates: (settings: UserSettings) => void;
   fetchSettings: () => Promise<UserSettings | undefined>;
   settingsLoaded: boolean
@@ -44,7 +43,7 @@ export const getCurrentUserSettingsAsync = async (): Promise<UserSettings> => {
 };
 
 export const updateSettingsAsync = async (partialSettings: Partial<UserSettings>) => {
-  useSettingsStore.getState().updateTransientSettings(partialSettings)
+  useSettingsStore.getState().updateSettings(partialSettings)
 };
 
 export const useSettingsStore = create<SettingsState>((set) => ({
@@ -63,13 +62,6 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     set((state) => {
       const updatedSettings = { ...state.settings, ...partialSettings };
       saveSettingsInDb(updatedSettings, updatedSettings.id);
-      return { settings: updatedSettings };
-    });
-  },
-  updateTransientSettings: async (partialSettings: Partial<UserSettings>) => {
-    console.log(partialSettings);
-    set((state) => {
-      const updatedSettings = { ...state.settings, ...partialSettings };
       return { settings: updatedSettings };
     });
   },
