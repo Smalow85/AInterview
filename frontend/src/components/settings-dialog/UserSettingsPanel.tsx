@@ -8,9 +8,10 @@ import { useLiveAPIContext } from "../../contexts/LiveAPIContext";
 import { EditableUserSettings, UserSettings } from "../../types/settings";
 import ResponseModalitySelector from "./ResponseModalitySelector";
 import VoiceSelector from "./VoiceSelector";
+import ThemeSelector from "./ThemeSelector";
 import { useSettingsStore } from "../../lib/store-settings";
 import { saveSettingsInDb } from "../../lib/storage/settings-storage";
-import ThemeSelector from "./ThemeSelector";
+
 
 const fieldLabels: { [key in keyof EditableUserSettings]: string } = {
   firstName: "First Name",

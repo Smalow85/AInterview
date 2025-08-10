@@ -93,7 +93,7 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
             startOfSpeechSensitivity: StartSensitivity.START_SENSITIVITY_LOW,
             endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_LOW,
             prefixPaddingMs: 30,
-            silenceDurationMs: 300,
+            silenceDurationMs: 1500,
           }
         },
         inputAudioTranscription: { enabled: true },
@@ -119,7 +119,7 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
             startOfSpeechSensitivity: StartSensitivity.START_SENSITIVITY_LOW,
             endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_LOW,
             prefixPaddingMs: 30,
-            silenceDurationMs: 300,
+            silenceDurationMs: 1500,
           }
         },
         sessionResumption: { handle: settings.resumptionToken },
@@ -147,7 +147,7 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
             startOfSpeechSensitivity: StartSensitivity.START_SENSITIVITY_LOW,
             endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_LOW,
             prefixPaddingMs: 30,
-            silenceDurationMs: 300,
+            silenceDurationMs: 1500,
           }
         },
         sessionResumption: { handle: settings.resumptionToken },
@@ -174,7 +174,7 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
             startOfSpeechSensitivity: StartSensitivity.START_SENSITIVITY_LOW,
             endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_LOW,
             prefixPaddingMs: 30,
-            silenceDurationMs: 300,
+            silenceDurationMs: 1500,
           }
         },
         sessionResumption: { handle: settings.resumptionToken },
