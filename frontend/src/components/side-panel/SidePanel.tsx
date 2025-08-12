@@ -52,7 +52,7 @@ export default function SidePanel({ isCollapsed, onToggleCollapse }: SidePanelPr
   };
 
   const handleEndConversation = async () => {
-    updateSettings({ sessionActive: true, sessionType: 'default', activeSessionId: undefined });
+    updateSettings({ sessionActive: true, sessionType: 'default', activeSessionId: undefined, resumptionToken: undefined, systemInstruction: '' });
     clearMessages();
   };
 
@@ -97,7 +97,7 @@ export default function SidePanel({ isCollapsed, onToggleCollapse }: SidePanelPr
       </div>
 
       <div className="input-container">
-        {messages.length > 0 ? (
+        {messages.length > 0 || settings.resumptionToken ? (
           <>
             <button className="clear-button" onClick={handleClearMessages}>
               Clear Messages
