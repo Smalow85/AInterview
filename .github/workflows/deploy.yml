@@ -13,6 +13,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Create Firebase service account file
+        env:
+          FIREBASE_SERVICE_ACCOUNT_B64: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_B64 }}
+        run: |
+          echo $FIREBASE_SERVICE_ACCOUNT_B64 | base64 --decode > key.json 
+
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
         with:

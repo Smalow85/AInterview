@@ -33,5 +33,5 @@ build/
 .vscode/
 /frontend/live-api-web-console-main/.env
 /frontend/live-api-web-console-main/.gitignore
-/backend/key.json
+key.json
 node_modules

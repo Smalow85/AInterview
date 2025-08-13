@@ -186,8 +186,9 @@
 }
 
 .logout-button {
-  background-color: var(--Alert-60);
-  color: var(--Neutral-10);
+  background-color: var(--Neutral-50);
+  color: var(--text);
+  font-family: var(--font-family);
   border: none;
   padding: 8px 12px;
   border-radius: 8px;

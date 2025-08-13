@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import './UserDashboard.scss';
 import UserSettingsPanel from './UserSettingsPanel';
@@ -25,7 +24,7 @@ export default function UserDashboard({ onClose }: UserDashboardProps) {
           Recommendations
         </button>
         <button className="close-button material-symbols-outlined" onClick={onClose}>
-          Close
+          close
         </button>
       </div>
       <div className="tab-content">

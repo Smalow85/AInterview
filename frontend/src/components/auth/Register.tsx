@@ -9,23 +9,28 @@ interface RegisterProps {
 }
 
 const Register: React.FC<RegisterProps> = ({ onSwitchToLogin }) => {
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false); // Add loading state
+
+  const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true); // Start loading
+
+    setLoading(true);
     try {
       await register(email, password);
       navigate('/');
     } catch (err) {
       setError('Failed to register');
+      console.log(error);
     } finally {
-      setLoading(false); // End loading
+
+      setLoading(false);
     }
   };
 

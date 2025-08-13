@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import "./settings-dialog.scss";
 import UserDashboard from "./UserDashboard";
