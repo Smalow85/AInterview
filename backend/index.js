@@ -8,6 +8,10 @@ const bodyParser = require('body-parser');
 const chatRoutes = require('./routes/chatRoutes');
 const themedRoutes = require('./routes/themedRoutes');
 const interviewRoutes = require('./routes/interviewRoutes');
+const userRoutes = require('./routes/userRoutes');
+
+// Инициализируем Firebase Admin SDK при старте сервера
+require('./config/firebaseConfig');
 
 const app = express();
 
@@ -25,6 +29,7 @@ app.get('/api/ping', (req, res) => {
 app.use('/api/chat', chatRoutes);
 app.use('/api/themed-conversation-plan', themedRoutes);
 app.use('/api/interview-plan', interviewRoutes);
+app.use('/api/users', userRoutes);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {

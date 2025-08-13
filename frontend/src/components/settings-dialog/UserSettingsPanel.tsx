@@ -1,4 +1,3 @@
-
 import {
   ChangeEvent,
   FormEventHandler,
@@ -11,7 +10,7 @@ import VoiceSelector from "./VoiceSelector";
 import ThemeSelector from "./ThemeSelector";
 import { useSettingsStore } from "../../lib/store-settings";
 import { saveSettingsInDb } from "../../lib/storage/settings-storage";
-
+import { useAuth } from "../../contexts/AuthContext"; // Импортируем useAuth
 
 const fieldLabels: { [key in keyof EditableUserSettings]: string } = {
   firstName: "First Name",
@@ -21,7 +20,6 @@ const fieldLabels: { [key in keyof EditableUserSettings]: string } = {
   systemInstruction: "System Prompt",
 };
 
-
 interface UserSettingsPanelProps {
   onClose: () => void;
 }
@@ -30,6 +28,7 @@ export default function UserSettingsPanel({ onClose }: UserSettingsPanelProps) {
   const editableFields: (keyof EditableUserSettings)[] = ['firstName', 'lastName', 'email', 'language', 'systemInstruction'];
   const { config, setConfig } = useLiveAPIContext();
   const { settings, updateSettingsState, updateSettings } = useSettingsStore();
+  const { userProfile, logout } = useAuth(); // Получаем данные пользователя и функцию выхода
 
   const handleSettingChange: FormEventHandler<HTMLInputElement | HTMLSelectElement> = useCallback(
     (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -57,7 +56,18 @@ export default function UserSettingsPanel({ onClose }: UserSettingsPanelProps) {
 
   return (
     <div className="user-settings-panel">
-      <h3>User Settings</h3>
+      <div className="settings-header">
+        <h3>User Settings</h3>
+        <button className="logout-button" onClick={logout}>Logout</button>
+      </div>
+
+      {/* Отображение токенов */}
+      <div className="token-balance-container">
+        <span className="token-icon material-symbols-outlined">toll</span>
+        <span>Your Token Balance:</span>
+        <span className="token-count">{userProfile?.tokens ?? 'Loading...'}</span>
+      </div>
+
       <div className="mode-selectors">
         <ResponseModalitySelector />
         <VoiceSelector />

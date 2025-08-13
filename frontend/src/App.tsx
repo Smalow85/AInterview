@@ -1,19 +1,3 @@
-/**
- * Copyright 2024 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 import { useEffect, useRef, useState } from "react";
 import "./App.scss";
 import { LiveAPIProvider } from "./contexts/LiveAPIContext";
@@ -24,6 +8,9 @@ import { LiveClientOptions } from "./types";
 import MainPanel from "./components/main-panel/MainPanel";
 import DocumentPanel from "./components/right-panel/RightPanel";
 import { useSettingsStore } from "./lib/store-settings";
+import { useAuth } from "./contexts/AuthContext";
+import Login from "./components/auth/Login";
+import Register from "./components/auth/Register";
 
 const API_KEY = process.env.REACT_APP_GEMINI_API_KEY as string;
 if (typeof API_KEY !== "string") {
@@ -35,6 +22,8 @@ const apiOptions: LiveClientOptions = {
 };
 
 function App() {
+  const { currentUser } = useAuth();
+  const [isLogin, setIsLogin] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
   const { settings } = useSettingsStore();
@@ -54,6 +43,16 @@ function App() {
     document.body.className = settings.theme || "dark";
   }, [settings.theme]);
 
+  // Если пользователя нет, показываем страницу входа/регистрации
+  if (!currentUser) {
+    return isLogin ? (
+      <Login onSwitchToRegister={() => setIsLogin(false)} />
+    ) : (
+      <Register onSwitchToLogin={() => setIsLogin(true)} />
+    );
+  }
+
+  // Если пользователь есть, показываем основное приложение
   return (
       <LiveAPIProvider options={apiOptions}>
         <div className="App">

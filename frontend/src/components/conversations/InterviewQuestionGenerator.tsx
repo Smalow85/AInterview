@@ -1,9 +1,10 @@
+
 import React, { useState, useRef } from 'react';
 import './InterviewQuestionGenerator.scss';
 import { useSettingsStore } from '../../lib/store-settings';
 import { InterviewPhase } from '../../types/interview-question';
 import { useInterviewQuestionsStore } from '../../lib/store-interview-question';
-
+import { useAuth } from '../../contexts/AuthContext'; // Импортируем useAuth
 
 export interface InterviewRequest {
     sessionId: string;
@@ -25,12 +26,19 @@ const InterviewQuestionGenerator = (props: { onClose: () => void }) => {
     const [showCloseButton, setShowCloseButton] = useState(false);
     const { updateSettings } = useSettingsStore();
     const { updateInterview } = useInterviewQuestionsStore();
+    const { currentUser } = useAuth(); // Получаем текущего пользователя
     const { onClose } = props;
 
     const handleGenerate = async () => {
+        if (!currentUser) {
+            setError('You must be logged in to start an interview.');
+            return;
+        }
+
         setLoading(true);
         setError('');
         try {
+            const token = await currentUser.getIdToken(); // Получаем ID токен
             const sessionId = crypto.randomUUID();
             const requestBody: InterviewRequest = {
                 sessionId,
@@ -43,11 +51,17 @@ const InterviewQuestionGenerator = (props: { onClose: () => void }) => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
                 },
                 body: JSON.stringify(requestBody),
             });
 
             if (!response.ok) {
+                // Проверяем на конкретный статус код нехватки токенов
+                if (response.status === 402) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Not enough tokens');
+                }
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
@@ -56,9 +70,9 @@ const InterviewQuestionGenerator = (props: { onClose: () => void }) => {
             updateInterview({phases: data.phases, position: jobTitle, interviewLoaded: true});
             updateSettings({sessionActive: true, sessionType: 'interview', activeSessionId: sessionId});
             setShowCloseButton(true);
-        } catch (error) {
+        } catch (error: any) {
             console.log("Error:", error)
-            setError("Error")
+            setError(error.message || "An unknown error occurred.")
         } finally {
             setLoading(false);
         }
