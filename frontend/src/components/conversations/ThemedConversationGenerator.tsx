@@ -17,7 +17,7 @@ const ThemedConversationGenerator = (props: { onClose: () => void }) => {
     const [loading, setLoading] = useState(false);
     const [showCloseButton, setShowCloseButton] = useState(false);
     const { updateSettings } = useSettingsStore();
-    const { updateConversation } = useThemedConversationStore();
+    const { patchConversation } = useThemedConversationStore();
     const { onClose } = props;
 
     const handleGenerate = async (theme: string, keySkills: string[]) => {
@@ -43,7 +43,7 @@ const ThemedConversationGenerator = (props: { onClose: () => void }) => {
 
             const data = await response.json(); 
             setGeneratedQuestions(data.learningGoals);
-            updateConversation({ theme: theme, learningGoals: data.learningGoals, conversationLoaded: true, activeSessionId: sessionId})
+            patchConversation({ theme: theme, learningGoals: data.learningGoals, conversationLoaded: true, activeSessionId: sessionId})
             updateSettings({sessionActive: true, sessionType: 'themed_interview', activeSessionId: sessionId});
             setShowCloseButton(true);
         } catch (error) {

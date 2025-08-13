@@ -4,9 +4,9 @@ import { ChatMessage } from "../../types/chat-message";
 import { ResponseCard } from "../../types/response-card";
 import { v4 as uuidv4 } from 'uuid';
 import { getCurrentUserSettingsAsync, updateSettingsAsync } from "../store-settings";
-import { getConversation } from "../store-conversation"
+import { getConversation, updateConversation } from "../store-conversation"
 import { TechnicalInterviewBot } from "../../types/interview-types";
-import { Question } from "../../types/interview-question";
+import { Answer, Question } from "../../types/interview-question";
 
 export class EnhancedGenAILiveClient extends GenAILiveClient {
     private accumulatedText: string = "";
@@ -457,13 +457,23 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
     }
 
     private async handleEvaluateThemedAnswer(args: any): Promise<any> {
+        const userSettings = await getCurrentUserSettingsAsync();
+        const conversation = await getConversation(userSettings.activeSessionId);
         const evaluation = {
             score: args.score,
-            relevance: args.relevance,
-            depth: args.depth,
-            nextAction: args.nextAction,
+            feedback: args.feedback,
+            user_response: args.user_response
         };
-        //this.conversationBot.saveEvaluation(evaluation);
+        console.log(evaluation);
+        const myAnswer: Answer = {
+            question_id: conversation.currentGoalIndex,
+            answer_text: evaluation.user_response,
+            timestamp: new Date().getTime(),
+            evaluation_score: evaluation.score,
+            notes: evaluation.feedback
+        };
+        conversation.answers.push(myAnswer);
+        updateConversation(conversation);
         return { status: "success", evaluation };
     }
 
@@ -484,7 +494,7 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         const systemPrompt = `Ты - эксперт по тематическим беседам. Текущая тема: ${currentGoal}.
 
         АЛГОРИТМ РАБОТЫ:
-            1. Получил ответ → вызови evaluate_themed_answer
+            1. Перед переходом к следующей цели → evaluate_themed_answer
             2. Если пользователь попросил ответить за него → provide_answer
             3. Если ответ полный → advance_themed_conversation для следующей цели
             4. Нужен уточняющий вопрос → ask_challenging_question

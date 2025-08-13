@@ -28,9 +28,9 @@ export interface Question {
 }
 
 export interface Answer {
-  question_id: string;
+  question_id: number;
   answer_text: string;
-  timestamp: string;
+  timestamp: number;
   evaluation_score?: number;
   notes?: string; // Can store JSON string of evaluation details
 }

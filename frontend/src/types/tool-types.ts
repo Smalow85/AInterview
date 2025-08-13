@@ -124,7 +124,7 @@ export const advance_themed_conversation: FunctionDeclaration = {
 
 export const evaluate_themed_answer: FunctionDeclaration = {
   name: "evaluate_themed_answer",
-  description: "Оценить ответ на вопрос в тематической беседе. Если ответа нет, подожди ответа, если юзер не знает ответ, ответь на вопрос сам и переходи к следующей теме, если пользователь просит пропустить тему, переходи к следующей теме",
+  description: "Оценить понимание юзера обсуждаемой темы и цели обучения. Оцени, насколько уверенно пользователь отвечал, насколько полные ответы давал и т.п.",
   parameters: {
     type: Type.OBJECT,
     properties: {
@@ -134,25 +134,16 @@ export const evaluate_themed_answer: FunctionDeclaration = {
         minimum: 0,
         maximum: 10
       },
-      relevance: {
-        type: Type.NUMBER,
-        description: "Релевантность ответа теме (0-1)",
-        minimum: 0,
-        maximum: 1
+      user_response: {
+         type: Type.STRING,
+         description: "Саммари ответов, предоставленных пользователем"
       },
-      depth: {
-        type: Type.NUMBER,
-        description: "Глубина ответа (0-1)",
-        minimum: 0,
-        maximum: 1
-      },
-      nextAction: {
+      feedback: {
         type: Type.STRING,
-        enum: ["advance_themed_conversation", "ask_challenging_question"],
-        description: "Следующее действие: продолжить, задать уточняющий вопрос, перейти к следущей теме"
+        description: "Обоснование оценки, разбор ответов пользователя, рекомендации о том, что следует подтянуть или изучить более глубоко и т.п."
       }
     },
-    required: ["score", "relevance", "depth", "nextAction"]
+    required: ["score", "user_response", "feedback"]
   }
 };
 

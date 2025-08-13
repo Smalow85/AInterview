@@ -6,7 +6,8 @@ import { saveConversationToDB, fetchConversationBySessionId } from "./storage/co
 
 interface ConversationQuestionsState {
     themedConversation: ThemedConversationSettings;
-    updateConversation: (partialSettings: Partial<ThemedConversationSettings>) => void;
+    patchConversation: (partialSettings: Partial<ThemedConversationSettings>) => void;
+    updateConversation: (conversationSettings: ThemedConversationSettings) => void;
     fetchQuestions: (sessionId: string, theme: string) => Promise<string[]>;
     getConversationBySessionId: (sessionId: string) => Promise<ThemedConversationSettings>;
     getCurrentGoal: (conversation: ThemedConversationSettings) => string;
@@ -15,6 +16,11 @@ interface ConversationQuestionsState {
 
 export const getConversation = async (sessionId: string): Promise<ThemedConversationSettings> => {
   await useThemedConversationStore.getState().getConversationBySessionId(sessionId); // Wait for settings to load
+  return useThemedConversationStore.getState().themedConversation;
+}; 
+
+export const updateConversation = async (conversation: ThemedConversationSettings): Promise<ThemedConversationSettings> => {
+  await useThemedConversationStore.getState().updateConversation(conversation); // Wait for settings to load
   return useThemedConversationStore.getState().themedConversation;
 }; 
 
@@ -48,7 +54,7 @@ export const useThemedConversationStore = create<ConversationQuestionsState>((se
     getConversationBySessionId: async (sessionId: string) => {
         return fetchConversationBySessionId(sessionId);
     },
-    updateConversation: (partialSettings: Partial<ThemedConversationSettings>) => {
+    patchConversation: (partialSettings: Partial<ThemedConversationSettings>) => {
         console.log(partialSettings);
         set((state) => {
             const themedConversation = { ...state.themedConversation, ...partialSettings };
@@ -57,6 +63,12 @@ export const useThemedConversationStore = create<ConversationQuestionsState>((se
         });
         set((state) => ({
             themedConversation: { ...state.themedConversation, ...partialSettings }, // Merge settings
+        }));
+    },
+    updateConversation: (conversationSettings: ThemedConversationSettings) => {
+        saveConversationToDB(conversationSettings);
+        set((state) => ({
+            themedConversation: conversationSettings
         }));
     },
     getCurrentGoal: (themedConversation: ThemedConversationSettings) => {
