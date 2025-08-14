@@ -1,5 +1,5 @@
 body.dark {
-  --background: #121212;
+  --background: #101214; // Very dark grey, almost black
   --text: #ffffff;
   --gray-200: #b4b8bb;
   --gray-300: #80868b;
@@ -9,11 +9,11 @@ body.dark {
   --gray-800: #171717;
   --gray-900: #111111;
   --gray-1000: #0a0a0a;
-  --border-stroke: #444444;
-  --accent-blue: rgb(161, 228, 242);
-  --accent-blue-active-bg: #001233;
-  --accent-blue-active: #98beff;
-  --accent-blue-headers: #448dff;
+  --border-stroke: #33363a; // Sharper, more defined border
+  --accent-blue: #007bff; // Vibrant electric blue
+  --accent-blue-active-bg: #0056b3;
+  --accent-blue-active: #0056b3;
+  --accent-blue-headers: #007bff;
   --accent-green: rgb(168, 218, 181);
 
   --midnight-blue: rgb(0, 18, 51);

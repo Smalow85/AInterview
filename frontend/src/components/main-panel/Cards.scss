@@ -1,9 +1,10 @@
+@import "../../styles/cards";
+
 .response-card-inner-container {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   justify-content: left;
   align-items: center;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 24px;
   padding: 32px;
   box-sizing: border-box;
@@ -17,6 +18,86 @@
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+.response-card-inner-container.is-empty {
+  display: flex;
+  justify-content: flex-start; /* Change to flex-start */
+  align-items: center;
+  padding: 48px 32px;
+  height: 100%;
+  width: 100%;
+}
+
+.empty-state .empty-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  color: var(--gray-500);
+}
+
+.empty-state h3 {
+  color: var(--text);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  font-family: var(--font-family);
+}
+
+.empty-state p {
+  color: var(--gray-300);
+  font-size: 0.9rem;
+  margin: 0;
+  line-height: 1.5;
+  font-family: var(--font-family);
+}
+
+.empty-state h3,
+.empty-state p {
+  font-feature-settings: "liga" 1, "kern" 1;
+  text-rendering: optimizeLegibility;
+}
+
+
+@media (max-width: 1200px) {
+  .response-card-inner-container {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+    padding: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .cards-container {
+    min-height: auto;
+  }
+
+  .response-card-inner-container {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .empty-state {
+    padding: 32px 20px;
+    min-height: 280px;
+  }
+
+  .empty-state .empty-icon {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+  }
+
+  .empty-state h3 {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .response-card-inner-container {
+    padding: 12px;
+    gap: 12px;
+  }
+}
+
 
 .response-card-inner-container.is-empty {
   display: flex;

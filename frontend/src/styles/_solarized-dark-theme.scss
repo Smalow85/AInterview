@@ -1,0 +1,52 @@
+body.solarized-dark {
+  // Base colors
+  --background: #002b36; // base03
+  --text: #839496; // base0
+  --border-stroke: #073642; // base02
+
+  // Accent colors (mapping to existing variables)
+  --accent-blue: #268bd2; // blue
+  --accent-blue-active-bg: #073642; // base02
+  --accent-blue-active: #2aa198; // cyan
+  --accent-blue-headers: #268bd2; // blue
+
+  --accent-green: #859900; // green
+  --accent-red: #dc322f; // red
+
+  // Neutral colors (mapping to existing variables)
+  --Neutral-00: #fdf6e3; // base3 (lightest)
+  --Neutral-5: #eee8d5; // base2
+  --Neutral-10: #073642; // base02
+  --Neutral-15: #002b36; // base03
+  --Neutral-20: #586e75; // base01
+  --Neutral-30: #657b83; // base00
+  --Neutral-50: #839496; // base0
+  --Neutral-60: #93a1a1; // base1
+  --Neutral-80: #b4b8bb; // (closest gray)
+  --Neutral-90: #c3c6c7; // (closest gray)
+
+  // Specific color mappings for existing variables
+  --gray-200: #b4b8bb;
+  --gray-300: #839496; // base0
+  --gray-500: #657b83; // base00
+  --gray-600: #586e75; // base01
+  --gray-700: #073642; // base02
+  --gray-800: #002b36; // base03
+  --gray-900: #002b36; // base03
+  --gray-1000: #002b36; // base03
+
+  --midnight-blue: #001233; // Keep original or find closest
+  --blue-30: #268bd2; // blue
+
+  --Green-500: #859900; // green
+  --Green-700: #586e75; // base01
+
+  --Blue-400: #268bd2; // blue
+  --Blue-500: #268bd2; // blue
+  --Blue-800: #073642; // base02
+
+  --Red-400: #dc322f; // red
+  --Red-500: #dc322f; // red
+  --Red-600: #cb4b16; // orange
+  --Red-700: #cb4b16; // orange
+}

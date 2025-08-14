@@ -1,5 +1,7 @@
 @import "../../styles/variables";
 @import "../../styles/mixins";
+@import "../../styles/buttons";
+@import "../../styles/forms";
 
 .auth-container {
   display: flex;
@@ -33,46 +35,9 @@
     gap: 16px;
 }
 
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.form-group label {
-    font-size: 1rem;
-    color: var(--gray-200);
-    }
-
-.form-group input {
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid var(--border-stroke);
-    background-color: var(--Neutral-10);
-    color: var(--text);
-    font-size: 1rem;
-    }
-
 .auth-button {
-    padding: 14px 24px;
-    background-color: var(--accent-blue);
-    color: var(--Neutral-00);
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 1.1rem;
-    font-weight: 500;
-    transition: background-color 0.3s ease;
-    font-family: var(--font-family);
-
-      &:hover {
-        background-color: var(--accent-blue-active);
-      }
-
-    &:disabled {
-        background-color: var(--Neutral-30);
-        cursor: not-allowed;
-    }
+    @extend .btn;
+    @extend .btn-primary;
   }
 
 .error-message {
@@ -88,18 +53,7 @@
 }
 
 .link-button {
-    background: none;
-    border: none;
-    color: var(--accent-blue);
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: 500;
-    transition: color 0.3s ease;
-    font-family: var(--font-family);
-
-    &:hover {
-        color: var(--accent-blue-active);
-    }
+    @extend .btn-link;
 }
 
 .app-description-button {

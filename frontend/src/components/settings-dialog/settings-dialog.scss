@@ -114,27 +114,12 @@
     box-sizing: border-box;
   }
 
-  .card-style-input,
+  .card-style-input {
+    @extend .input-text;
+  }
+
   .card-style-select {
-    background-color: var(--Neutral-15);
-    border: 1px solid var(--border-stroke);
-    border-radius: 4px;
-    color: var(--text);
-    padding: 12px;
-    font-size: 16px;
-    width: 100%;
-    box-sizing: border-box;
-    transition: all 0.2s ease;
-
-    &:hover {
-      border-color: var(--Neutral-90);
-    }
-
-    &:focus {
-      outline: none;
-      border-color: var(--accent-blue-headers);
-      box-shadow: 0 0 0 2px var(--Neutral-90);
-    }
+    @extend .input-select;
   }
 
   .function-declarations {

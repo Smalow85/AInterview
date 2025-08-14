@@ -1,0 +1,47 @@
+@mixin panel-base {
+  background: var(--Neutral-10);
+  width: 350px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-family);
+  overflow: hidden;
+  transition: width 0.3s ease;
+
+  &.collapsed {
+    width: 50px;
+  }
+}
+
+@mixin panel-top {
+  display: flex;
+  justify-content: left;
+  padding: 16px 8px 16px 8px;
+}
+
+@mixin panel-collapse-button {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: transform 0.3s ease, color 0.2s;
+
+  &.collapsed {
+    transform: rotate(180deg);
+  }
+
+  &:hover {
+    color: var(--accent-blue);
+  }
+}
+
+@mixin panel-title {
+  font-family: var(--font-family);
+  font-size: 1.35rem;
+  font-weight: 500;
+  color: var(--text);
+  overflow: hidden;
+  max-width: 200px;
+  transition: opacity 0.2s ease, transform 0.2s ease, max-width 0.2s ease;
+}

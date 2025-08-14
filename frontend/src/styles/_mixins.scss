@@ -19,21 +19,13 @@
         font-size: 24px;
     }
 
+        /* 
+    NOTE: The form field styles have been extracted to src/styles/_forms.scss.
+    Please use the .input-text, .input-textarea, and .input-select classes instead.
+    */
     input[type="text"],
     textarea {
-        border-radius: 12px;
-        background-color: var(--Neutral-15);
-        color: var(--Neutral-80);
-        font-family: var(--font-family);
-        border: 1px solid var(--Neutral-60);
-        margin-top: 8px;
-        line-height: 21px;
-        font-size: 18px;
-        width: calc(100% - 16px);
-        padding: 8px;
-        border: 0;
-        resize: vertical;
-        box-sizing: border-box;
+        @extend .form-field-large;
     }
 
     input[type="file"] {

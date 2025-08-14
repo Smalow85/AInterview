@@ -1,0 +1,49 @@
+body.nord {
+  // Polar Night (backgrounds)
+  --background: #2E3440; // nord0
+  --Neutral-00: #ECEFF4; // nord6 (lightest)
+  --Neutral-5: #D8DEE9; // nord4
+  --Neutral-10: #3B4252; // nord1
+  --Neutral-15: #434C5E; // nord2
+  --Neutral-20: #4C566A; // nord3
+
+  // Snow Storm (foregrounds)
+  --text: #D8DEE9; // nord4
+  --gray-200: #E5E9F0; // nord5
+  --gray-300: #ECEFF4; // nord6
+
+  // Frost (accents)
+  --accent-blue: #88C0D0; // nord8
+  --accent-blue-active-bg: #5E81AC; // nord10
+  --accent-blue-active: #81A1C1; // nord9
+  --accent-blue-headers: #88C0D0; // nord8
+
+  --border-stroke: #4C566A; // nord3
+
+  // Aurora (colorful accents)
+  --accent-green: #A3BE8C; // nord14
+  --accent-red: #BF616A; // nord11
+
+  // General mapping for existing variables
+  --gray-500: #4C566A; // nord3
+  --gray-600: #3B4252; // nord1
+  --gray-700: #2E3440; // nord0
+  --gray-800: #2E3440; // nord0
+  --gray-900: #2E3440; // nord0
+  --gray-1000: #2E3440; // nord0
+
+  --midnight-blue: #2E3440; // Keep original or find closest
+  --blue-30: #81A1C1; // nord9
+
+  --Green-500: #A3BE8C; // nord14
+  --Green-700: #8FBCBB; // nord7
+
+  --Blue-400: #8FBCBB; // nord7
+  --Blue-500: #88C0D0; // nord8
+  --Blue-800: #5E81AC; // nord10
+
+  --Red-400: #D08770; // nord12
+  --Red-500: #BF616A; // nord11
+  --Red-600: #D08770; // nord12
+  --Red-700: #D08770; // nord12
+}

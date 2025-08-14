@@ -3,8 +3,10 @@ import Select from "react-select";
 import { useSettingsStore } from "../../lib/store-settings";
 
 const themeOptions = [
-    { value: "dark", label: "Dark" },
-    { value: "light", label: "Light" },
+   { value: "dark", label: "Dark" },
+   { value: "light", label: "Light" },
+   { value: "solarized-dark", label: "Solarized Dark" },
+   { value: "nord", label: "Nord" },
 ];
 
 export default function ThemeSelector() {
