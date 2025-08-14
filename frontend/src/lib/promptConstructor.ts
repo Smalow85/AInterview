@@ -1,16 +1,17 @@
 import { TechnicalInterviewBot } from "../types/interview-types";
-import { Question } from "../types/interview-question";
-import { ThemedConversationBot } from "../types/themed-conversation-types";
-import { ThemedConversationSettings } from "../types/settings";
+import { InterviewPhase, Question } from "../types/interview-question";
+import { InterviewSettings, ThemedConversationSettings } from "../types/settings";
 import { useThemedConversationStore } from "./store-conversation";
+import { useInterviewQuestionsStore } from "./store-interview";
 
 
 export class PromptConstructor {
-  constructInterviewInitialSystemPrompt(interviewBot: TechnicalInterviewBot): string {
+  constructInterviewInitialSystemPrompt(interview: InterviewSettings): string {
+    const currentPhase: InterviewPhase | null = useInterviewQuestionsStore.getState().getCurrentPhase(interview);
+    console.log("phase", currentPhase.name);
+    const currentQuestion = currentPhase.questions[interview.currentQuestionIndex]
 
-    const currentQuestion: Question | null = interviewBot.get_current_question();
-
-    const initialSystemPrompt = `You are conducting a technical interview for the position of ${interviewBot.position}.
+    const initialSystemPrompt = `You are conducting a technical interview for the position of ${interview.position}.
       INTERVIEW RULES:
       1. Speak clearly and professionally, but in a friendly manner
       2. Ask questions one at a time, don’t rush
@@ -36,7 +37,7 @@ export class PromptConstructor {
       EVALUATION CRITERIA: ${currentQuestion ? currentQuestion.evaluationCriteria.join(', ') : 'No criteria'}
       KEYWORDS: ${currentQuestion ? currentQuestion.expectedKeywords.join(', ') : 'No keywords'}
       INTERVIEW STRUCTURE:
-      ${interviewBot.phases.map(p => `- ${p.name})`).join('\n')}
+      ${interview.phases.map(p => `- ${p.name})`).join('\n')}
       Start with a greeting and the first question.`;
     return initialSystemPrompt;
   }

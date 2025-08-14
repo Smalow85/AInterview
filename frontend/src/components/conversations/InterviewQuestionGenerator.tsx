@@ -3,7 +3,7 @@ import React, { useState, useRef } from 'react';
 import './InterviewQuestionGenerator.scss';
 import { useSettingsStore } from '../../lib/store-settings';
 import { InterviewPhase } from '../../types/interview-question';
-import { useInterviewQuestionsStore } from '../../lib/store-interview-question';
+import { useInterviewQuestionsStore } from '../../lib/store-interview';
 import { useAuth } from '../../contexts/AuthContext'; // Импортируем useAuth
 
 export interface InterviewRequest {
@@ -25,7 +25,7 @@ const InterviewQuestionGenerator = (props: { onClose: () => void }) => {
     const [loading, setLoading] = useState(false);
     const [showCloseButton, setShowCloseButton] = useState(false);
     const { updateSettings } = useSettingsStore();
-    const { updateInterview } = useInterviewQuestionsStore();
+    const { patchInterview } = useInterviewQuestionsStore();
     const { currentUser } = useAuth(); // Получаем текущего пользователя
     const { onClose } = props;
 
@@ -67,7 +67,7 @@ const InterviewQuestionGenerator = (props: { onClose: () => void }) => {
 
             const data = await response.json();
             setGeneratedQuestions(data.phases);
-            updateInterview({phases: data.phases, position: jobTitle, interviewLoaded: true});
+            patchInterview({phases: data.phases, position: jobTitle, interviewLoaded: true});
             updateSettings({sessionActive: true, sessionType: 'interview', activeSessionId: sessionId});
             setShowCloseButton(true);
         } catch (error: any) {

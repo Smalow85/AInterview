@@ -29,7 +29,10 @@ export interface InterviewSettings {
   activeSessionId: string;
   phases: InterviewPhase[];
   position: string;
-  interviewLoaded: boolean
+  interviewLoaded: boolean;
+  currentPhaseIndex: number;
+  currentQuestionIndex: number;
+  active: boolean;
 }
 
 export interface EditableUserSettings {

@@ -24,7 +24,7 @@ import VolMeterWorket from "../lib/audio/vol-meter";
 import { useSettingsStore } from "../lib/store-settings";
 import { PromptConstructor } from "../lib/promptConstructor";
 import { useThemedConversationStore } from "../lib/store-conversation";
-import { useInterviewQuestionsStore } from "../lib/store-interview-question";
+import { useInterviewQuestionsStore } from "../lib/store-interview";
 import {
   advance_interview_declaration,
   ask_question,
@@ -80,7 +80,6 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
   const promptConstructor = new PromptConstructor();
 
   const client = useMemo(() => new EnhancedGenAILiveClient(options), [options]);
-  const [interviewBot, setInterviewBot] = useState(() => client.interviewBot);
 
   async function setupLiveAPIConfig(): Promise<LiveConnectConfig> {
     let initialSystemPrompt = null;
@@ -105,10 +104,7 @@ export function useLiveAPI(options: LiveClientOptions): UseLiveAPIResults {
   };
 
     if (settings.sessionType === 'interview') {
-      const initializedBot = interviewBot._initializeInterviewStructure(interview)
-      setInterviewBot(initializedBot);
-      initialSystemPrompt = promptConstructor.constructInterviewInitialSystemPrompt(interviewBot);
-      client.interviewBot = initializedBot;
+      initialSystemPrompt = promptConstructor.constructInterviewInitialSystemPrompt(interview);
       newConfig = {
         systemInstruction: initialSystemPrompt || settings.systemInstruction,
         inputAudioTranscription: { enabled: true },

@@ -5,20 +5,19 @@ import { ResponseCard } from "../../types/response-card";
 import { v4 as uuidv4 } from 'uuid';
 import { getCurrentUserSettingsAsync, updateSettingsAsync } from "../store-settings";
 import { getConversation, updateConversation } from "../store-conversation"
-import { TechnicalInterviewBot } from "../../types/interview-types";
+import { getInterview, advanceToNextPhase, advanceToNextQuestion } from "../store-interview";
 import { Answer, Question } from "../../types/interview-question";
+import { InterviewSettings } from "../../types/settings";
 
 export class EnhancedGenAILiveClient extends GenAILiveClient {
     private accumulatedText: string = "";
     private accumulatedInputText: string = "";
-    public interviewBot: TechnicalInterviewBot;
     private followUpCount: number = 0;
     private readonly maxFollowUps: number = 3;
     private lastUserAnswer: string = "";
 
     constructor(options: LiveClientOptions) {
         super(options);
-        this.interviewBot = new TechnicalInterviewBot();
         this.onmessage = this.onmessage.bind(this);
         this.handleTurnComplete = this.handleTurnComplete.bind(this);
         this.sendRealtimeInput = this.sendRealtimeInput.bind(this);
@@ -152,20 +151,13 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
             return { status: "error", error: "No user answer to evaluate" };
         }
 
-        this.saveEvaluation({
-            score: args.score,
-            keywords_found: args.keywords_found || [],
-            needs_followup: args.needs_followup,
-            next_action: args.next_action
-        });
+        this.saveEvaluation();
 
         if (args.next_action === "ask_followup") {
             this.followUpCount++;
         } else {
             this.followUpCount = 0;
         }
-
-        const currentQuestion = this.interviewBot.get_current_question();
 
         return {
             status: "success",
@@ -176,7 +168,6 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
                 needs_followup: args.needs_followup,
                 followup_count: this.followUpCount,
                 max_followups_reached: this.followUpCount >= this.maxFollowUps,
-                current_question: currentQuestion?.text || "No current question",
                 suggested_action: args.next_action
             }
         };
@@ -184,23 +175,24 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
 
     private async handleAdvanceInterview(args: any) {
         const action = args.action;
+        const userSettings = await getCurrentUserSettingsAsync();
+        let interview = await getInterview(userSettings.activeSessionId);
 
         switch (action) {
             case "next_question":
-                this.interviewBot.advance_to_next_question();
-                const nextQuestion = this.interviewBot.get_current_question();
-
-                if (nextQuestion) {
-                    await this.updateSystemInstructionForGemini(nextQuestion);
+                interview = await advanceToNextQuestion(interview);
+                const currentQuestion = this.getCurrentQuestion(interview);
+                if (currentQuestion) {
+                    await this.updateSystemInstructionForGemini(interview, currentQuestion);
                     return {
                         status: "success",
                         action: "next_question",
                         question: {
-                            text: nextQuestion.text,
-                            keywords: nextQuestion.expectedKeywords,
-                            criteria: nextQuestion.evaluationCriteria
+                            text: currentQuestion.text,
+                            keywords: currentQuestion.expectedKeywords,
+                            criteria: currentQuestion.evaluationCriteria
                         },
-                        phase: this.interviewBot.current_phase
+                        phase: interview.phases[interview.currentPhaseIndex]
                     };
                 } else {
                     return {
@@ -211,15 +203,15 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
                 }
 
             case "next_phase":
-                this.interviewBot.advance_to_next_question();
-                const phaseQuestion = this.interviewBot.get_current_question();
+                interview = await advanceToNextPhase(interview);
+                const phaseQuestion = this.getCurrentQuestion(interview);
 
                 if (phaseQuestion) {
-                    await this.updateSystemInstructionForGemini(phaseQuestion);
+                    await this.updateSystemInstructionForGemini(interview, phaseQuestion);
                     return {
                         status: "success",
                         action: "next_phase",
-                        new_phase: this.interviewBot.current_phase,
+                        new_phase: interview.phases[interview.currentPhaseIndex],
                         question: {
                             text: phaseQuestion.text,
                             keywords: phaseQuestion.expectedKeywords,
@@ -256,8 +248,6 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         const additionalContext = args.additional_context || "";
         this.addQuestionCard(userSettings.activeSessionId, questionText, userSettings.language);
 
-        this.interviewBot.questionSent = true;
-
         return {
             status: "success",
             question_asked: questionText,
@@ -281,15 +271,17 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
     }
 
     public async startInterview() {
-        if (!this.interviewBot.active) {
-            this.interviewBot.active = true;
+        const userSettings = await getCurrentUserSettingsAsync();
+        let interview = await getInterview(userSettings.activeSessionId);
+        if (!interview.active) {
+            interview.active = true;
 
-            const firstQuestion = this.interviewBot.get_current_question();
+            const firstQuestion = this.getCurrentQuestion(interview);
             if (firstQuestion) {
-                await this.updateSystemInstructionForGemini(firstQuestion);
+                await this.updateSystemInstructionForGemini(interview, firstQuestion);
 
-                const welcomeMessage = `Привет! Начинаем техническое интервью на позицию ${this.interviewBot.position}.
-                Интервью состоит из ${this.interviewBot.phases.length} фаз.
+                const welcomeMessage = `Привет! Начинаем техническое интервью на позицию ${interview.position}.
+                Интервью состоит из ${interview.phases.length} фаз.
                 Используй функцию ask_question чтобы задать первый вопрос.`;
 
                 await this.send({ text: welcomeMessage }, true);
@@ -297,13 +289,8 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         }
     }
 
-    private saveEvaluation(evaluation: any) {
-        if (this.interviewBot.answers.length > 0) {
-            const lastAnswer = this.interviewBot.answers[this.interviewBot.answers.length - 1];
-            lastAnswer.evaluation_score = evaluation.score || 0;
-            lastAnswer.notes = JSON.stringify(evaluation);
-            console.log("Evaluation saved:", lastAnswer);
-        }
+    private saveEvaluation() {
+        console.log("Evaluation saved:");
     }
 
     private async saveUserMessage(sessionId: string, message: string) {
@@ -380,7 +367,7 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         }
     }
 
-    private async updateSystemInstructionForGemini(newQuestion: Question | null) {
+    private async updateSystemInstructionForGemini(interview: InterviewSettings, newQuestion: Question | null) {
         let systemPrompt: string;
 
         if (newQuestion) {
@@ -399,8 +386,8 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
             4. Новый вопрос → ask_question
 
             ТЕКУЩИЕ ДАННЫЕ:
-            - Позиция: ${this.interviewBot.position}
-            - Текущая фаза: ${this.interviewBot.current_phase}
+            - Позиция: ${interview.position}
+            - Текущая фаза: ${interview.phases[interview.currentPhaseIndex]}
             - Текущий вопрос: ${newQuestion.text}
             - Ключевые слова: ${newQuestion.expectedKeywords.join(', ')}
             - Критерии оценки: ${newQuestion.evaluationCriteria.join(', ')}
@@ -427,8 +414,7 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
     private async finalizeInterview() {
         console.log("Finalizing interview...");
 
-        const finalReport = this.interviewBot.generate_final_report();
-        console.log("Final Interview Report:", finalReport);
+        console.log("Final Interview Report:");
 
         setTimeout(() => {
             this.disconnect();
@@ -451,7 +437,7 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         } else {
             const systemPrompt = `Интервью завершено. Используй provide_feedback с типом "final_feedback"
                           для финального фидбека кандидату.`;
-            this.send({text: `[SYSTEM_UPDATE] ${systemPrompt}`}, true);
+            this.send({ text: `[SYSTEM_UPDATE] ${systemPrompt}` }, true);
         }
 
     }
@@ -510,6 +496,23 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
 
         this.send({ text: `[SYSTEM_UPDATE] ${systemPrompt}` }, true);
         console.log("Updated system instruction for themed conversation.");
+    }
+
+    private getCurrentQuestion(interview: InterviewSettings): Question | null {
+        if (!interview.phases) {
+            return null;
+        }
+        if (interview.currentPhaseIndex >= interview.phases.length) {
+            return null;
+        }
+        if (interview.currentPhaseIndex == -1) {
+            return null;
+        }
+        const currentPhase = interview.phases[interview.currentPhaseIndex];
+        if (interview.currentQuestionIndex >= currentPhase.questions.length) {
+            return null;
+        }
+        return currentPhase.questions[interview.currentQuestionIndex];
     }
 }
 

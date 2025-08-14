@@ -1,6 +1,6 @@
 import { openDB } from 'idb';
 
-export const dbPromise = openDB('MyAppDB', 6, { // Increment database version to 2
+export const dbPromise = openDB('MyAppDB', 7, { // Increment database version to 2
   upgrade(db, oldVersion, newVersion, transaction) { // Added params
     if (!db.objectStoreNames.contains('settings')) {
       db.createObjectStore('settings');
@@ -23,6 +23,11 @@ export const dbPromise = openDB('MyAppDB', 6, { // Increment database version to
       if (!store.indexNames.contains('favorite')) {
         store.createIndex('favorite', 'favorite');
       }
+    }
+
+    if (!db.objectStoreNames.contains('interviews')) {
+      const store = db.createObjectStore('interviews');
+      store.createIndex('sessionId', 'sessionId');
     }
   }
 });

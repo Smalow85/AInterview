@@ -61,9 +61,6 @@ export const useThemedConversationStore = create<ConversationQuestionsState>((se
             saveConversationToDB(themedConversation);
             return { themedConversation: themedConversation };
         });
-        set((state) => ({
-            themedConversation: { ...state.themedConversation, ...partialSettings }, // Merge settings
-        }));
     },
     updateConversation: (conversationSettings: ThemedConversationSettings) => {
         saveConversationToDB(conversationSettings);
