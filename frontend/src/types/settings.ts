@@ -18,7 +18,7 @@ export interface ThemedConversationSettings {
   activeSessionId: string;
   learningGoals: string[];
   answers: Answer[];
-  learningGoalFeedbacks: string[]; 
+  learningGoalScore: number[];
   currentGoalIndex: number;
   theme: string;
   conversationLoaded: boolean;

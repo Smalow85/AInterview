@@ -29,7 +29,7 @@ const defaultConversation: ThemedConversationSettings = {
     learningGoals: [],
     answers: [],
     currentGoalIndex: 0,
-    learningGoalFeedbacks: [],
+    learningGoalScore: [],
     theme: '',
     conversationLoaded: false,
     finalFeedback: ''

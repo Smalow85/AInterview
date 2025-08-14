@@ -7,8 +7,6 @@ router.post('/:sessionId', async (req, res) => {
   const request = req.body;
 
   try {
-    console.log("I am here")
-    console.log("I am here")
     const goalsPlan = await generateLearningObjectivesPlan(request, sessionId);
     if (!goalsPlan || !goalsPlan.learningGoals) {
       return res.status(400).json({ error: 'Invalid learning goals returned' });

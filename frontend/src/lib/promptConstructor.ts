@@ -72,7 +72,7 @@ export class PromptConstructor {
       WORKFLOW:
       1. Greet the student and introduce the goal of this conversation
       2. Begin by exploring the current learning objective using ask_challenging_question
-      3. After each answer, use evaluate_themed_answer to assess and give feedback
+      3. After each objectives completed, use evaluate_themed_answer to assess and give feedback
       4. If necessary, follow up with another ask_challenging_question
       5. Once the student shows understanding, call advance_themed_conversation
       6. Repeat the process for the next objective

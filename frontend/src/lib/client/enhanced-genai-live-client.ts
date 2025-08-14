@@ -473,6 +473,13 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
             notes: evaluation.feedback
         };
         conversation.answers.push(myAnswer);
+        if (!conversation.learningGoalScore || conversation.learningGoalScore.length == 0) {
+            conversation.learningGoalScore = [];
+            while (conversation.learningGoalScore.length <= conversation.learningGoals.length) {
+                conversation.learningGoalScore.push(0);
+            }
+        }
+        conversation.learningGoalScore[conversation.currentGoalIndex] = evaluation.score;
         updateConversation(conversation);
         return { status: "success", evaluation };
     }
@@ -494,7 +501,7 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         const systemPrompt = `Ты - эксперт по тематическим беседам. Текущая тема: ${currentGoal}.
 
         АЛГОРИТМ РАБОТЫ:
-            1. Перед переходом к следующей цели → evaluate_themed_answer
+            1. Перед переходом к следующей цели обучения → evaluate_themed_answer
             2. Если пользователь попросил ответить за него → provide_answer
             3. Если ответ полный → advance_themed_conversation для следующей цели
             4. Нужен уточняющий вопрос → ask_challenging_question

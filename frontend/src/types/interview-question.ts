@@ -32,7 +32,7 @@ export interface Answer {
   answer_text: string;
   timestamp: number;
   evaluation_score?: number;
-  notes?: string; // Can store JSON string of evaluation details
+  notes?: string;
 }
 
 export interface InterviewPhase {

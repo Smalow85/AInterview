@@ -39,7 +39,7 @@ export default function ConversationProgressBar() {
                             {themedConversation.learningGoals.map((goal, index) => (
                                 <div className="goal-item" key={index}>
                                     <span>{index + 1}: {goal}</span>
-                                    <span>{themedConversation.learningGoalFeedbacks[index] || "Not yet graded"}</span>
+                                    <span>{themedConversation.learningGoalScore[index] || "Not yet graded"}</span>
                                 </div>
                             ))}
                         </div>
