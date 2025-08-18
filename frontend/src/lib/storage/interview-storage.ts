@@ -1,25 +1,30 @@
 import { dbPromise } from './index';
 import { InterviewSettings } from '../../types/settings';
 
+const STORE_NAME = 'interviews';
+
 export async function fetchInterviewBySessionId(sessionId: string): Promise<InterviewSettings> {
-  if (!sessionId) {
-    console.warn('fetchInterviewBySessionId: sessionId is undefined');
-    throw new Error("fetchInterviewBySessionId: sessionId is undefined"); // или throw new Error("Session ID is required");
-  }
   const db = await dbPromise;
-  return db.getFromIndex('interviews', 'sessionId', sessionId);
+  const result = await db.get(STORE_NAME, sessionId);
+  return result;
 }
+
+export async function fetchAllInterviews(): Promise<InterviewSettings[]> {
+  const db = await dbPromise;
+  return await db.getAll(STORE_NAME);
+}
+
 
 export async function saveInterviewToDB(interview: InterviewSettings): Promise<InterviewSettings> {
   const db = await dbPromise;
-  await db.put('interviews', interview, interview.activeSessionId);
+  await db.put(STORE_NAME, interview, interview.activeSessionId);
   return interview;
 }
 
 export async function clearInterviewBySessionId(sessionId: string): Promise<void> {
   const db = await dbPromise;
-  const tx = db.transaction('interviews', 'readwrite');
-  const store = tx.objectStore('interviews');
+  const tx = db.transaction(STORE_NAME, 'readwrite');
+  const store = tx.objectStore(STORE_NAME);
   const index = store.index('sessionId');
 
   let cursor = await index.openCursor(sessionId);

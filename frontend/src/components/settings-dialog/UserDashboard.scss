@@ -20,29 +20,22 @@
       &.active {
         border-bottom: 2px solid var(--accent-blue-headers);
         font-weight: bold;
+        cursor: pointer;
+        padding: 10px;
+        color: var(--text);
       }
     }
-    .close-button {
-      margin-left: auto;
-      background: none;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
-      padding: 10px;
-      color: var(--text);
+
+    .tab-content {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 32px;
+      -ms-overflow-style: none;
+      /* IE and Edge */
+      scrollbar-width: none;
+      /* Firefox */
+      scrollbar-width: none;
+      /* Firefox */
     }
-  }
-
-  .tab-content {
-    flex-grow: 1;
-    overflow-y: auto;
-    padding: 32px;
-
-    &::-webkit-scrollbar {
-      display: none;
-    }
-
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
   }
 }
