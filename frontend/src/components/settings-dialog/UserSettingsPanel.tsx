@@ -58,8 +58,8 @@ export default function UserSettingsPanel({ onClose }: UserSettingsPanelProps) {
     <div className="user-settings-panel">
       <div className="settings-header">
         <h3>User Settings</h3>
-        <button className="logout-button material-symbols-outlined" onClick={logout}>
-            logout
+        <button onClick={logout}>
+          <span className="logout-button material-symbols-outlined">logout</span>
         </button>
       </div>
 

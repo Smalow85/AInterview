@@ -24,7 +24,7 @@ export default function UserDashboard({ onClose }: UserDashboardProps) {
           Recommendations
         </button>
         <button className="close-button material-symbols-outlined" onClick={onClose}>
-          close
+          X
         </button>
       </div>
       <div className="tab-content">
