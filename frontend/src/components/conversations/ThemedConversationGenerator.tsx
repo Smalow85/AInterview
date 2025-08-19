@@ -9,6 +9,11 @@ export interface ThemedConversationRequest {
     keySkills: string[];
 }
 
+export interface RecommendedConversationRequest {
+    feedback: string;
+    topics: string[];
+}
+
 const ThemedConversationGenerator = (props: { onClose: () => void }) => {
     const [theme, setTheme] = useState('');
     const [keySkills, setKeySkills] = useState<string[]>([]);
@@ -95,12 +100,17 @@ const ThemedConversationGenerator = (props: { onClose: () => void }) => {
             </div>
             )}
             {error && <p className="error">{error}</p>}
-            <h2>Generated questions:</h2>
-            <ul>
-                {generatedQuestions.map((question, index) => (
-                    <li key={index}>{question}</li>
-                ))}
-            </ul>
+            {generatedQuestions.length > 0 && (
+                <>
+                    <h2>Generated questions:</h2>
+                    <ul>
+                        {generatedQuestions.map((question, index) => (
+                            <li key={index}>{question}</li>
+                        ))}
+                    </ul>
+                </>
+            )}
+
             {showCloseButton && (
                 <button className="start-button" onClick={
                     () => {

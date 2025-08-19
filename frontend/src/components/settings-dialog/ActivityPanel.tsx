@@ -53,7 +53,6 @@ export default function ActivityPanel() {
 
   return (
     <div className="activity-panel">
-      <h3>Activity</h3>
       {history.length === 0 ? (
         <p>No activity yet.</p>
       ) : (

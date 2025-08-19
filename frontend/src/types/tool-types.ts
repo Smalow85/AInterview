@@ -184,3 +184,38 @@ export const provide_answer: FunctionDeclaration = {
     required: ["question"]
   }
 };
+
+export const generate_recommendation: FunctionDeclaration = {
+    name: "generate_recommendation",
+    description: "Сгенерировать рекомендацию для пользователя на основе результатов беседы",
+    parameters: {
+        type: Type.OBJECT,
+        properties: {
+            recommendation: {
+                type: Type.STRING,
+                description: "Текст рекомендации"
+            },
+            topics: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+                description: "Список тем для изучения"
+            }
+        },
+        required: ["recommendation", "topics"]
+    }
+};
+
+export const provide_final_feedback: FunctionDeclaration = {
+    name: "provide_final_feedback",
+    description: "Предоставить финальный фидбек пользователю по результатам беседы",
+    parameters: {
+        type: Type.OBJECT,
+        properties: {
+            feedback: {
+                type: Type.STRING,
+                description: "Текст финального фидбека"
+            }
+        },
+        required: ["feedback"]
+    }
+};

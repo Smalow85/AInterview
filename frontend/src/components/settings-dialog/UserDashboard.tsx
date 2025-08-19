@@ -30,7 +30,7 @@ export default function UserDashboard({ onClose }: UserDashboardProps) {
       <div className="tab-content">
         {activeTab === 'settings' && <UserSettingsPanel onClose={onClose} />}
         {activeTab === 'activity' && <ActivityPanel />}
-        {activeTab === 'recommendations' && <RecommendationsPanel />}
+        {activeTab === 'recommendations' && <RecommendationsPanel onClose={onClose} />}
       </div>
     </div>
   );

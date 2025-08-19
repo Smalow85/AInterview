@@ -8,6 +8,7 @@ import { getConversation, updateConversation } from "../store-conversation"
 import { getInterview, advanceToNextPhase, advanceToNextQuestion } from "../store-interview";
 import { Answer, Question } from "../../types/interview-question";
 import { InterviewSettings } from "../../types/settings";
+import { saveRecommendation } from "../storage/recommendation-storage";
 
 export class EnhancedGenAILiveClient extends GenAILiveClient {
     private accumulatedText: string = "";
@@ -127,6 +128,12 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
                     break;
                 case "provide_answer":
                     functionResponse.response = await this.handleProvideAnswer(args);
+                    break;
+                case "generate_recommendation":
+                    functionResponse.response = await this.handleGenerateRecommendation(args);
+                    break;
+                case "provide_final_feedback":
+                    functionResponse.response = await this.handleProvideFinalFeedback(args);
                     break;
                 default:
                     console.warn(`Unknown function call: ${functionName}`);
@@ -435,11 +442,11 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
                 return { status: "success", curr_goal };
             }
         } else {
-            const systemPrompt = `Интервью завершено. Используй provide_feedback с типом "final_feedback"
-                          для финального фидбека кандидату.`;
+            const systemPrompt = `Беседа завершена. 
+            1. Предоставь финальный фидбек, используя provide_final_feedback. 
+            2. Сгенерируй рекомендации, используя generate_recommendation.`;
             this.send({ text: `[SYSTEM_UPDATE] ${systemPrompt}` }, true);
         }
-
     }
 
     private async handleEvaluateThemedAnswer(args: any): Promise<any> {
@@ -483,6 +490,24 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         this.addQuestionCard(userSettings.activeSessionId, question, userSettings.language);
     }
 
+    private async handleGenerateRecommendation(args: any): Promise<any> {
+        const recommendation = {
+            recommendation: args.recommendation,
+            topics: args.topics,
+            createdAt: Date.now(),
+        };
+        await saveRecommendation(recommendation);
+        return { status: "success" };
+    }
+
+    private async handleProvideFinalFeedback(args: any): Promise<any> {
+        const userSettings = await getCurrentUserSettingsAsync();
+        const conversation = await getConversation(userSettings.activeSessionId);
+        conversation.finalFeedback = args.feedback;
+        updateConversation(conversation);
+        return { status: "success" };
+    }
+
     private async updateSystemInstructionForThemedConversation(currentGoal: string) {
         const systemPrompt = `Ты - эксперт по тематическим беседам. Текущая тема: ${currentGoal}.
 
@@ -492,7 +517,7 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
             3. Если ответ полный → advance_themed_conversation для следующей цели
             4. Нужен уточняющий вопрос → ask_challenging_question
 
-        Используй инструменты: evaluate_themed_answer, advance_themed_conversation, ask_challenging_question, provide_answer.`;
+        Используй инструменты: evaluate_themed_answer, advance_themed_conversation, ask_challenging_question, provide_answer, provide_final_feedback, generate_recommendation.`;
 
         this.send({ text: `[SYSTEM_UPDATE] ${systemPrompt}` }, true);
         console.log("Updated system instruction for themed conversation.");
@@ -515,4 +540,3 @@ export class EnhancedGenAILiveClient extends GenAILiveClient {
         return currentPhase.questions[interview.currentQuestionIndex];
     }
 }
-

@@ -1,10 +1,9 @@
-
 import React, { useState, useRef } from 'react';
 import './InterviewQuestionGenerator.scss';
 import { useSettingsStore } from '../../lib/store-settings';
 import { InterviewPhase } from '../../types/interview-question';
 import { useInterviewQuestionsStore } from '../../lib/store-interview';
-import { useAuth } from '../../contexts/AuthContext'; // Импортируем useAuth
+import { useAuth } from '../../contexts/AuthContext';
 
 export interface InterviewRequest {
     sessionId: string;
@@ -26,7 +25,7 @@ const InterviewQuestionGenerator = (props: { onClose: () => void }) => {
     const [showCloseButton, setShowCloseButton] = useState(false);
     const { updateSettings } = useSettingsStore();
     const { patchInterview } = useInterviewQuestionsStore();
-    const { currentUser } = useAuth(); // Получаем текущего пользователя
+    const { currentUser } = useAuth();
     const { onClose } = props;
 
     const handleGenerate = async () => {
@@ -38,7 +37,7 @@ const InterviewQuestionGenerator = (props: { onClose: () => void }) => {
         setLoading(true);
         setError('');
         try {
-            const token = await currentUser.getIdToken(); // Получаем ID токен
+            const token = await currentUser.getIdToken();
             const sessionId = crypto.randomUUID();
             const requestBody: InterviewRequest = {
                 sessionId,
@@ -51,13 +50,12 @@ const InterviewQuestionGenerator = (props: { onClose: () => void }) => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
+                    'Authorization': `Bearer ${token}`,
                 },
                 body: JSON.stringify(requestBody),
             });
 
             if (!response.ok) {
-                // Проверяем на конкретный статус код нехватки токенов
                 if (response.status === 402) {
                     const errorData = await response.json();
                     throw new Error(errorData.message || 'Not enough tokens');
@@ -160,12 +158,16 @@ const InterviewQuestionGenerator = (props: { onClose: () => void }) => {
             </div>
             )}
             {error && <p className="error">{error}</p>}
-            <h2>Generated questions:</h2>
-            <ul>
-                {generatedQuestions.map((question, index) => (
-                    <li key={index}>{question.name}</li>
-                ))}
-            </ul>
+            {generatedQuestions.length > 0 && (
+                <>
+                    <h2>Generated questions:</h2>
+                    <ul>
+                        {generatedQuestions.map((question, index) => (
+                            <li key={index}>{question.name}</li>
+                        ))}
+                    </ul>
+                </>
+            )}
             {showCloseButton && (
                 <button className="start-button" onClick={
                     () => {
@@ -177,3 +179,4 @@ const InterviewQuestionGenerator = (props: { onClose: () => void }) => {
 };
 
 export default InterviewQuestionGenerator;
+
